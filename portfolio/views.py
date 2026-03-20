@@ -123,3 +123,31 @@ def delete_transaction_view(request, pk):
         transaction.delete()
         messages.success(request, 'Transaction supprimée.')
     return redirect('dashboard')
+
+
+@login_required
+def clear_history_view(request, pk):
+    position = get_object_or_404(Position, pk=pk, user=request.user)
+    if request.method == 'POST':
+        # Sauvegarde la situation actuelle
+        quantity = position.total_quantity
+        avg_price = position.average_price
+
+        if quantity <= 0:
+            messages.error(request, "Aucune position active à conserver.")
+            return redirect('position_detail', pk=pk)
+
+        # Supprime toutes les transactions existantes
+        position.transactions.all().delete()
+
+        # Crée une seule transaction de synthèse
+        Transaction.objects.create(
+            position=position,
+            transaction_type='BUY',
+            quantity=quantity,
+            price=avg_price,
+            date=None,
+            notes="Position de synthèse (historique effacé)"
+        )
+        messages.success(request, f'Historique effacé. Position conservée : {quantity} actions à {avg_price:.2f}€ en moyenne.')
+    return redirect('position_detail', pk=pk)

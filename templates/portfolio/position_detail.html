@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}{{ position.symbol }} — Détail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><strong>{{ position.symbol }}</strong> — {{ position.name }}</h2>
+    <a href="{% url 'add_transaction' %}?symbol={{ position.symbol }}&name={{ position.name }}"
+       class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nouvelle transaction
+    </a>
+</div>
+
+<!-- Résumé position -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-muted small">Quantité détenue</div>
+            <div class="fs-4 fw-bold">{{ position.total_quantity|floatformat:4 }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-muted small">PRU moyen</div>
+            <div class="fs-4 fw-bold">{{ position.average_price|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <div class="text-muted small">Prix actuel</div>
+            <div class="fs-4 fw-bold">{{ current_price|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3 {% if gain_loss >= 0 %}border-success{% else %}border-danger{% endif %}">
+            <div class="text-muted small">+/- Value</div>
+            <div class="fs-4 fw-bold {% if gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {{ gain_loss|floatformat:2 }} ({{ gain_loss_pct|floatformat:2 }}%)
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historique des transactions -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="card-title mb-0">Historique des transactions</h5>
+            <form method="post" action="{% url 'clear_history' position.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-warning"
+                    onclick="return confirm('Effacer l historique ? La position actuelle sera conservée.')">
+                    <i class="bi bi-eraser"></i> Effacer l'historique
+                </button>
+            </form>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Type</th>
+                        <th>Quantité</th>
+                        <th>Prix unitaire</th>
+                        <th>Total</th>
+                        <th>Date</th>
+                        <th>Notes</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td>
+                            <span class="badge {% if t.transaction_type == 'BUY' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ t.get_transaction_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ t.quantity|floatformat:4 }}</td>
+                        <td>{{ t.price|floatformat:2 }}</td>
+                        <td>{{ t.total_value|floatformat:2 }}</td>
+                        <td>{{ t.date|default:"—" }}</td>
+                        <td>{{ t.notes|default:"—" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'delete_transaction' t.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Supprimer cette transaction ?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mt-3">
+    <i class="bi bi-arrow-left"></i> Retour au dashboard
+</a>
+{% endblock %}

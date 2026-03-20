@@ -6,4 +6,5 @@ urlpatterns = [
     path('transaction/add/', views.add_transaction_view, name='add_transaction'),
     path('position/<int:pk>/', views.position_detail_view, name='position_detail'),
     path('transaction/<int:pk>/delete/', views.delete_transaction_view, name='delete_transaction'),
+    path('position/<int:pk>/clear-history/', views.clear_history_view, name='clear_history'),
 ]
