@@ -1,10 +1,8 @@
 {% extends 'base.html' %}
+{% load analysis_tags %}
 {% block title %}{{ symbol }} — Analyse{% endblock %}
 
 {% block content %}
-
-<p>active_tab = "{{ active_tab }}"</p>
-<p>chart_data vide = {% if chart_data %}NON{% else %}OUI{% endif %}</p>
 
 <!-- En-tête -->
 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -33,19 +31,39 @@
 {% if scoring %}
 <div class="card mb-3 border-{{ scoring.global_color }}">
     <div class="card-body py-3">
-        <div class="row align-items-center">
-            <!-- Score -->
-            <div class="col-md-3 text-center border-end">
+
+        <!-- Score global + catégories -->
+        <div class="row align-items-center mb-3">
+            <div class="col-md-2 text-center border-end">
                 <div class="display-4 fw-bold text-{{ scoring.global_color }}">
                     {{ scoring.global_score }}
                     <span class="fs-5 text-muted">/100</span>
                 </div>
                 <div class="badge bg-{{ scoring.global_color }} fs-6 mt-1">
-                    {{ scoring.global_emoji }} {{ scoring.global_label }}
+                    {{ scoring.global_label }}
                 </div>
             </div>
-            <!-- Points forts -->
-            <div class="col-md-4 border-end ps-4">
+            <div class="col-md-10">
+                <div class="row text-center">
+                    {% for cat_key, cat_name in categories_display %}
+                    {% with cat=scoring.categories|get_item:cat_key %}
+                    <div class="col">
+                        <div class="fw-bold fs-4 text-{{ cat.color }}">{{ cat.score }}</div>
+                        <div class="small text-muted">{{ cat_name }}</div>
+                        <div class="progress mt-1" style="height:6px;">
+                            <div class="progress-bar bg-{{ cat.color }}"
+                                 style="width:{{ cat.score }}%"></div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Points forts / faibles -->
+        <div class="row border-top pt-3">
+            <div class="col-md-6">
                 <h6 class="text-success mb-2">
                     <i class="bi bi-check-circle-fill"></i> Points forts
                 </h6>
@@ -59,8 +77,7 @@
                 <p class="text-muted small mb-0">Aucun point fort identifié</p>
                 {% endif %}
             </div>
-            <!-- Points faibles -->
-            <div class="col-md-4 ps-4">
+            <div class="col-md-6">
                 <h6 class="text-danger mb-2">
                     <i class="bi bi-exclamation-triangle-fill"></i> Points faibles
                 </h6>
@@ -75,6 +92,7 @@
                 {% endif %}
             </div>
         </div>
+
     </div>
 </div>
 {% endif %}

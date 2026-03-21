@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from portfolio.fmp_service import (
     search_symbol, get_company_profile, get_quote,
     get_income_statement, get_balance_sheet, get_cash_flow,
+    get_income_statement_ttm, get_balance_sheet_ttm, get_cash_flow_ttm,
 )
 from .ratios import calculate_ratios
 from .scoring import calculate_score
@@ -49,11 +50,15 @@ def company_view(request, symbol):
     income_statements = enrich_income_statements(income_statements)
     balance_sheets = get_balance_sheet(symbol, limit=period)
     cash_flows = get_cash_flow(symbol, limit=period)
+    income_ttm = get_income_statement_ttm(symbol)
+    balance_ttm = get_balance_sheet_ttm(symbol)
+    cash_flow_ttm = get_cash_flow_ttm(symbol)
 
     # ── CALCUL LOCAL DES RATIOS ───────────────────────────────
     ratios = calculate_ratios(
         profile, quote,
-        income_statements, balance_sheets, cash_flows
+        income_statements, balance_sheets, cash_flows,
+        income_ttm, balance_ttm, cash_flow_ttm,
     )
     scoring = calculate_score(ratios)
 
@@ -95,5 +100,12 @@ def company_view(request, symbol):
         'balance_sheets': balance_sheets,
         'cash_flows': cash_flows,
         'chart_data': chart_data,
+        'categories_display': [
+            ('growth', 'Croissance'),
+            ('profitability', 'Rentabilité'),
+            ('valuation', 'Valorisation'),
+            ('safety', 'Sécurité'),
+            ('quality', 'Qualité'),
+        ],
     }
     return render(request, 'analysis/company.html', context)

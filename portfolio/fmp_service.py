@@ -76,3 +76,21 @@ def get_multiple_quotes(symbols):
         if quote:
             quotes[symbol] = quote
     return quotes
+
+def get_income_statement_ttm(symbol):
+    """Compte de résultats TTM"""
+    url = f"{BASE_URL}/income-statement-ttm?symbol={symbol}&apikey={API_KEY}"
+    data = _get(url, f"income_ttm_{symbol}")
+    return data[0] if data else {}
+
+def get_balance_sheet_ttm(symbol):
+    """Bilan TTM"""
+    url = f"{BASE_URL}/balance-sheet-statement-ttm?symbol={symbol}&apikey={API_KEY}"
+    data = _get(url, f"balance_ttm_{symbol}")
+    return data[0] if data else {}
+
+def get_cash_flow_ttm(symbol):
+    """Cash flow TTM"""
+    url = f"{BASE_URL}/cash-flow-statement-ttm?symbol={symbol}&apikey={API_KEY}"
+    data = _get(url, f"cashflow_ttm_{symbol}")
+    return data[0] if data else {}
