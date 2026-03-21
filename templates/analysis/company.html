@@ -145,215 +145,211 @@
 {% if active_tab == 'profile' %}
 
 <div class="row mb-4">
-    <!-- Valorisation -->
-    <div class="col-md-3 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="card-title text-primary">💰 Valorisation</h6>
-                <table class="table table-sm mb-0">
-                    {% with s=scoring.scored_ratios %}
-                    <tr>
-                        <td class="text-muted small">PER</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{{ ratios.per|default:"—" }}</span>
-                            {% if s.per.label != 'N/A' %}
-                            <span class="badge bg-{{ s.per.color }} ms-1 small">{{ s.per.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">PEG</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{{ ratios.peg|default:"—" }}</span>
-                            {% if s.peg.label != 'N/A' %}
-                            <span class="badge bg-{{ s.peg.color }} ms-1 small">{{ s.peg.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">P/B</td>
-                        <td class="text-end fw-bold">{{ ratios.pb|default:"—" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">P/S</td>
-                        <td class="text-end fw-bold">{{ ratios.ps|default:"—" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">P/FCF</td>
-                        <td class="text-end fw-bold">{{ ratios.pcf|default:"—" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">EV/EBITDA</td>
-                        <td class="text-end fw-bold">{{ ratios.ev_ebitda|default:"—" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">EV (Mrd$)</td>
-                        <td class="text-end fw-bold">{{ ratios.ev|default:"—" }}</td>
-                    </tr>
-                    {% endwith %}
-                </table>
-            </div>
-        </div>
-    </div>
+    <!-- 5 blocs de notation -->
+    <div class="row mb-4">
 
-    <!-- Rentabilité -->
-    <div class="col-md-3 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="card-title text-success">📈 Rentabilité</h6>
-                <table class="table table-sm mb-0">
-                    {% with s=scoring.scored_ratios %}
-                    <tr>
-                        <td class="text-muted small">Marge brute</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{% if ratios.gross_margin %}{{ ratios.gross_margin }}%{% else %}—{% endif %}</span>
-                            {% if s.gross_margin.label != 'N/A' %}
-                            <span class="badge bg-{{ s.gross_margin.color }} ms-1 small">{{ s.gross_margin.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Marge opé.</td>
-                        <td class="text-end fw-bold">{% if ratios.operating_margin %}{{ ratios.operating_margin }}%{% else %}—{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Marge nette</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{% if ratios.net_margin %}{{ ratios.net_margin }}%{% else %}—{% endif %}</span>
-                            {% if s.net_margin.label != 'N/A' %}
-                            <span class="badge bg-{{ s.net_margin.color }} ms-1 small">{{ s.net_margin.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Marge EBITDA</td>
-                        <td class="text-end fw-bold">{% if ratios.ebitda_margin %}{{ ratios.ebitda_margin }}%{% else %}—{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Marge FCF</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{% if ratios.fcf_margin %}{{ ratios.fcf_margin }}%{% else %}—{% endif %}</span>
-                            {% if s.fcf_margin.label != 'N/A' %}
-                            <span class="badge bg-{{ s.fcf_margin.color }} ms-1 small">{{ s.fcf_margin.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">ROE</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{% if ratios.roe %}{{ ratios.roe }}%{% else %}—{% endif %}</span>
-                            {% if s.roe.label != 'N/A' %}
-                            <span class="badge bg-{{ s.roe.color }} ms-1 small">{{ s.roe.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">ROA</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{% if ratios.roa %}{{ ratios.roa }}%{% else %}—{% endif %}</span>
-                            {% if s.roa.label != 'N/A' %}
-                            <span class="badge bg-{{ s.roa.color }} ms-1 small">{{ s.roa.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">ROCE</td>
-                        <td class="text-end fw-bold">{% if ratios.roce %}{{ ratios.roce }}%{% else %}—{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">ROIC</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{% if ratios.roic %}{{ ratios.roic }}%{% else %}—{% endif %}</span>
-                            {% if s.roic.label != 'N/A' %}
-                            <span class="badge bg-{{ s.roic.color }} ms-1 small">{{ s.roic.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
+        <!-- CROISSANCE -->
+        <div class="col-md mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">📈 Croissance</h6>
+                        <div class="score-circle" data-score="{{ scoring.categories.growth.score }}">
+                            {{ scoring.categories.growth.score }}
+                        </div>
+                    </div>
+                    {% with cat=scoring.categories.growth.rated %}
+                    {% for ratio_key, label in growth_ratios %}
+                    {% with r=cat|get_item:ratio_key %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">{{ label }}</span>
+                            <span class="fw-bold">
+                                {% if r.value %}{{ r.value }}%{% else %}—{% endif %}
+                            </span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill" data-score="{{ r.score|default:0 }}" style="width:0%"></div>
+                        </div>
+                    </div>
                     {% endwith %}
-                </table>
+                    {% endfor %}
+                    {% endwith %}
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Solidité financière -->
-    <div class="col-md-3 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="card-title text-warning">🏦 Solidité financière</h6>
-                <table class="table table-sm mb-0">
-                    {% with s=scoring.scored_ratios %}
-                    <tr>
-                        <td class="text-muted small">Ratio courant</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{{ ratios.current_ratio|default:"—" }}</span>
-                            {% if s.current_ratio.label != 'N/A' %}
-                            <span class="badge bg-{{ s.current_ratio.color }} ms-1 small">{{ s.current_ratio.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Ratio rapide</td>
-                        <td class="text-end fw-bold">{{ ratios.quick_ratio|default:"—" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Dette/Fonds propres</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{{ ratios.debt_to_equity|default:"—" }}</span>
-                            {% if s.debt_to_equity.label != 'N/A' %}
-                            <span class="badge bg-{{ s.debt_to_equity.color }} ms-1 small">{{ s.debt_to_equity.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Dette/Actifs</td>
-                        <td class="text-end fw-bold">{{ ratios.debt_to_assets|default:"—" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Couverture intérêts</td>
-                        <td class="text-end fw-bold">{{ ratios.interest_coverage|default:"—" }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Dette nette (Mrd$)</td>
-                        <td class="text-end fw-bold">{{ ratios.net_debt|default:"—" }}</td>
-                    </tr>
+        <!-- RENTABILITÉ -->
+        <div class="col-md mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">💰 Rentabilité</h6>
+                        <div class="score-circle" data-score="{{ scoring.categories.profitability.score }}">
+                            {{ scoring.categories.profitability.score }}
+                        </div>
+                    </div>
+                    {% with cat=scoring.categories.profitability.rated %}
+                    {% for ratio_key, label in profitability_ratios %}
+                    {% with r=cat|get_item:ratio_key %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">{{ label }}</span>
+                            <span class="fw-bold">
+                                {% if r.value %}{{ r.value }}%{% else %}—{% endif %}
+                            </span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill" data-score="{{ r.score|default:0 }}" style="width:0%"></div>
+                        </div>
+                    </div>
                     {% endwith %}
-                </table>
+                    {% endfor %}
+                    {% endwith %}
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Croissance & Dividendes -->
-    <div class="col-md-3 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="card-title text-info">🌱 Croissance & Dividendes</h6>
-                <table class="table table-sm mb-0">
-                    {% with s=scoring.scored_ratios %}
-                    <tr>
-                        <td class="text-muted small">Croissance CA</td>
-                        <td class="text-end">
-                            <span class="fw-bold">{% if ratios.revenue_growth %}{{ ratios.revenue_growth }}%{% else %}—{% endif %}</span>
-                            {% if s.revenue_growth.label != 'N/A' %}
-                            <span class="badge bg-{{ s.revenue_growth.color }} ms-1 small">{{ s.revenue_growth.label }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Croissance RN</td>
-                        <td class="text-end fw-bold">{% if ratios.net_income_growth %}{{ ratios.net_income_growth }}%{% else %}—{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Rendement div.</td>
-                        <td class="text-end fw-bold">{% if ratios.dividend_yield %}{{ ratios.dividend_yield }}%{% else %}—{% endif %}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted small">Taux distribution</td>
-                        <td class="text-end fw-bold">{% if ratios.payout_ratio %}{{ ratios.payout_ratio }}%{% else %}—{% endif %}</td>
-                    </tr>
+        <!-- VALORISATION -->
+        <div class="col-md mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">🏷️ Valorisation</h6>
+                        <div class="score-circle" data-score="{{ scoring.categories.valuation.score }}">
+                            {{ scoring.categories.valuation.score }}
+                        </div>
+                    </div>
+                    {% with cat=scoring.categories.valuation.rated %}
+                    {% for ratio_key, label in valuation_ratios %}
+                    {% with r=cat|get_item:ratio_key %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">{{ label }}</span>
+                            <span class="fw-bold">
+                                {% if r.value %}{{ r.value }}{% else %}—{% endif %}
+                            </span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill" data-score="{{ r.score|default:0 }}" style="width:0%"></div>
+                        </div>
+                    </div>
                     {% endwith %}
-                </table>
+                    {% endfor %}
+                    {% endwith %}
+                </div>
             </div>
         </div>
+
+        <!-- SÉCURITÉ -->
+        <div class="col-md mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">🛡️ Sécurité</h6>
+                        <div class="score-circle" data-score="{{ scoring.categories.safety.score }}">
+                            {{ scoring.categories.safety.score }}
+                        </div>
+                    </div>
+                    {% with cat=scoring.categories.safety.rated %}
+                    {% for ratio_key, label in safety_ratios %}
+                    {% with r=cat|get_item:ratio_key %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">{{ label }}</span>
+                            <span class="fw-bold">
+                                {% if r.value %}{{ r.value }}{% else %}—{% endif %}
+                            </span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill" data-score="{{ r.score|default:0 }}" style="width:0%"></div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                    {% endfor %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+
+        <!-- QUALITÉ -->
+        <div class="col-md mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="card-title mb-0">⭐ Qualité</h6>
+                        <div class="score-circle" data-score="{{ scoring.categories.quality.score }}">
+                            {{ scoring.categories.quality.score }}
+                        </div>
+                    </div>
+                    <!-- Qualité : indicateurs spéciaux -->
+                    {% with q=scoring.categories.quality %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">Bénéfices positifs</span>
+                            <span class="fw-bold">{{ ratios.profitable_years }}/{{ ratios.total_years }} ans</span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill"
+                                data-score="{% widthratio ratios.profitable_years ratios.total_years 100 %}"
+                                style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">FCF positif</span>
+                            <span class="fw-bold">{{ ratios.positive_fcf_years }}/{{ ratios.total_years }} ans</span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill"
+                                data-score="{% widthratio ratios.positive_fcf_years ratios.total_years 100 %}"
+                                style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">Rachat d'actions</span>
+                            <span class="fw-bold">
+                                {% if ratios.shares_buyback %}✅ Oui{% elif ratios.shares_buyback == False %}❌ Non{% else %}—{% endif %}
+                            </span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill"
+                                data-score="{% if ratios.shares_buyback %}100{% else %}0{% endif %}"
+                                style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">Marges consistantes</span>
+                            <span class="fw-bold">
+                                {% if ratios.margin_consistency %}✅ Oui{% else %}❌ Non{% endif %}
+                            </span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill"
+                                data-score="{% if ratios.margin_consistency %}100{% else %}20{% endif %}"
+                                style="width:0%"></div>
+                        </div>
+                    </div>
+                    {% if ratios.dividend_cagr %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted">Croissance dividende</span>
+                            <span class="fw-bold">{{ ratios.dividend_cagr }}%</span>
+                        </div>
+                        <div class="ratio-bar">
+                            <div class="ratio-bar-fill"
+                                data-score="{% if ratios.dividend_cagr > 10 %}90{% elif ratios.dividend_cagr > 5 %}65{% else %}40{% endif %}"
+                                style="width:0%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+
     </div>
 
 <!-- Graphiques -->
@@ -707,6 +703,34 @@ const grossMargins = {{ chart_data.gross_margins|safe }};
 const netMargins = {{ chart_data.net_margins|safe }};
 const operatingMargins = {{ chart_data.operating_margins|safe }};
 const fcf = {{ chart_data.fcf|safe }};
+
+function scoreToColor(score) {
+    if (score === null || score === undefined) return '#adb5bd';
+    const s = Math.max(0, Math.min(100, score));
+    let r, g;
+    if (s < 50) {
+        r = 220;
+        g = Math.round(s * 2 * 166 / 100);
+    } else {
+        r = Math.round(220 - (s - 50) * 2 * 220 / 100);
+        g = 166;
+    }
+    return `rgb(${r}, ${g}, 50)`;
+}
+
+function renderBars() {
+    document.querySelectorAll('.ratio-bar-fill').forEach(el => {
+        const score = parseInt(el.dataset.score);
+        el.style.width = (score || 0) + '%';
+        el.style.background = scoreToColor(score);
+    });
+    document.querySelectorAll('.score-circle').forEach(el => {
+        const score = parseInt(el.dataset.score);
+        el.style.background = scoreToColor(score);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', renderBars);
 
 new Chart(document.getElementById('revenueChart'), {
     type: 'bar',

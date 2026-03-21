@@ -107,5 +107,35 @@ def company_view(request, symbol):
             ('safety', 'Sécurité'),
             ('quality', 'Qualité'),
         ],
+        'growth_ratios': [
+            ('revenue_cagr', 'CA CAGR'),
+            ('net_income_cagr', 'RN CAGR'),
+            ('eps_cagr', 'BPA CAGR'),
+            ('fcf_cagr', 'FCF CAGR'),
+        ],
+        'profitability_ratios': [
+            ('roe', 'ROE'),
+            ('roic', 'ROIC'),
+            ('roa', 'ROA'),
+            ('net_margin', 'Marge nette'),
+            ('gross_margin', 'Marge brute'),
+            ('fcf_margin', 'Marge FCF'),
+        ],
+        'valuation_ratios': [
+            ('per', 'PER'),
+            ('peg', 'PEG'),
+            ('pb', 'P/B'),
+            ('ps', 'P/S'),
+            ('pcf', 'P/FCF'),
+            ('ev_ebitda', 'EV/EBITDA'),
+            ('ev_revenue', 'EV/Revenue'),
+        ],
+        'safety_ratios': [
+            ('debt_to_equity', 'Dette/FP'),
+            ('net_debt_ebitda', 'Dette nette/EBITDA'),
+            ('interest_coverage', 'Couv. intérêts'),
+            ('current_ratio', 'Ratio courant'),
+            ('quick_ratio', 'Ratio rapide'),
+        ],
     }
     return render(request, 'analysis/company.html', context)
