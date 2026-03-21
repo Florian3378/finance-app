@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Recherche — FinanceApp{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2 class="mb-4"><i class="bi bi-search"></i> Rechercher une action</h2>
+
+        <!-- Barre de recherche -->
+        <form method="get" class="mb-4">
+            <div class="input-group input-group-lg">
+                <input type="text" name="q" class="form-control"
+                    placeholder="Nom ou symbole... (ex: Apple, AAPL)"
+                    value="{{ query }}" autofocus>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Rechercher
+                </button>
+            </div>
+        </form>
+
+        <!-- Résultats -->
+        {% if query and not results %}
+            <div class="alert alert-warning">
+                Aucun résultat pour "{{ query }}".
+            </div>
+        {% endif %}
+
+        {% if results %}
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for result in results %}
+                    <a href="{% url 'company' result.symbol %}"
+                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ result.symbol }}</strong>
+                            <span class="ms-2 text-muted">{{ result.name }}</span>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-secondary">{{ result.exchangeShortName }}</span>
+                            <span class="badge bg-light text-dark ms-1">{{ result.currency }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not query %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-graph-up-arrow" style="font-size: 3rem;"></i>
+            <p class="mt-3">Recherche une entreprise pour accéder à son analyse fondamentale.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

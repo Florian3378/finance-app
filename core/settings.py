@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # Nos apps
     'users',
     'portfolio',
+    'analysis',
 ]
 
 MIDDLEWARE = [

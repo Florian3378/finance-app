@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+{% block title %}{{ symbol }} — Analyse{% endblock %}
+
+{% block content %}
+
+<!-- En-tête -->
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div class="d-flex align-items-center gap-3">
+        {% if profile.image %}
+        <img src="{{ profile.image }}" alt="{{ symbol }}" style="width:50px;height:50px;object-fit:contain;">
+        {% endif %}
+        <div>
+            <h2 class="mb-0">{{ profile.companyName|default:symbol }}</h2>
+            <span class="text-muted">{{ symbol }} · {{ profile.exchange }} · {{ profile.currency }}</span>
+        </div>
+    </div>
+    <div class="text-end">
+        <h3 class="mb-0">${{ quote.price|floatformat:2 }}</h3>
+        <span class="{% if quote.change >= 0 %}text-success{% else %}text-danger{% endif %}">
+            {{ quote.change|floatformat:2 }} ({{ quote.changesPercentage|floatformat:2 }}%)
+        </span>
+    </div>
+</div>
+
+<!-- Onglets -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}"
+           href="?tab=profile">
+            <i class="bi bi-building"></i> Profil
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'income' %}active{% endif %}"
+           href="?tab=income">
+            <i class="bi bi-file-earmark-text"></i> Compte de résultats
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'balance' %}active{% endif %}"
+           href="?tab=balance">
+            <i class="bi bi-bank"></i> Bilan
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'cashflow' %}active{% endif %}"
+           href="?tab=cashflow">
+            <i class="bi bi-cash-stack"></i> Cash Flow
+        </a>
+    </li>
+</ul>
+
+<!-- ONGLET PROFIL -->
+{% if active_tab == 'profile' %}
+<div class="row">
+    <!-- Ratios clés -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Ratios clés</h5>
+                <table class="table table-sm">
+                    <tbody>
+                        <tr><td class="text-muted">PER</td>
+                            <td class="text-end fw-bold">{{ ratios.per|floatformat:2|default:"—" }}</td></tr>
+                        <tr><td class="text-muted">PEG</td>
+                            <td class="text-end fw-bold">{{ ratios.peg|floatformat:2|default:"—" }}</td></tr>
+                        <tr><td class="text-muted">P/B</td>
+                            <td class="text-end fw-bold">{{ ratios.pb|floatformat:2|default:"—" }}</td></tr>
+                        <tr><td class="text-muted">P/S</td>
+                            <td class="text-end fw-bold">{{ ratios.ps|floatformat:2|default:"—" }}</td></tr>
+                        <tr><td class="text-muted">EV/EBITDA</td>
+                            <td class="text-end fw-bold">{{ ratios.ev_ebitda|floatformat:2|default:"—" }}</td></tr>
+                        <tr><td class="text-muted">ROE</td>
+                            <td class="text-end fw-bold">
+                                {% if ratios.roe %}{{ ratios.roe|floatformat:1 }}%{% else %}—{% endif %}
+                            </td></tr>
+                        <tr><td class="text-muted">ROA</td>
+                            <td class="text-end fw-bold">
+                                {% if ratios.roa %}{{ ratios.roa|floatformat:1 }}%{% else %}—{% endif %}
+                            </td></tr>
+                        <tr><td class="text-muted">ROIC</td>
+                            <td class="text-end fw-bold">
+                                {% if ratios.roic %}{{ ratios.roic|floatformat:1 }}%{% else %}—{% endif %}
+                            </td></tr>
+                        <tr><td class="text-muted">Marge brute</td>
+                            <td class="text-end fw-bold">
+                                {% if ratios.gross_margin %}{{ ratios.gross_margin|floatformat:1 }}%{% else %}—{% endif %}
+                            </td></tr>
+                        <tr><td class="text-muted">Marge nette</td>
+                            <td class="text-end fw-bold">
+                                {% if ratios.net_margin %}{{ ratios.net_margin|floatformat:1 }}%{% else %}—{% endif %}
+                            </td></tr>
+                        <tr><td class="text-muted">Dette/Fonds propres</td>
+                            <td class="text-end fw-bold">{{ ratios.debt_to_equity|floatformat:2|default:"—" }}</td></tr>
+                        <tr><td class="text-muted">Ratio courant</td>
+                            <td class="text-end fw-bold">{{ ratios.current_ratio|floatformat:2|default:"—" }}</td></tr>
+                        <tr><td class="text-muted">Rendement dividende</td>
+                            <td class="text-end fw-bold">
+                                {% if ratios.dividend_yield %}{{ ratios.dividend_yield|floatformat:2 }}%{% else %}—{% endif %}
+                            </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="card-title">Revenus & Bénéfice net (Mrd $)</h6>
+                <canvas id="revenueChart" height="120"></canvas>
+            </div>
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h6 class="card-title">Marges (%)</h6>
+                <canvas id="marginChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Description -->
+{% if profile.description %}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h5 class="card-title">À propos</h5>
+        <p class="text-muted mb-1">
+            <span class="badge bg-primary">{{ profile.sector }}</span>
+            <span class="badge bg-secondary ms-1">{{ profile.industry }}</span>
+            <span class="ms-2"><i class="bi bi-geo-alt"></i> {{ profile.country }}</span>
+            <span class="ms-2"><i class="bi bi-people"></i> {{ profile.fullTimeEmployees }} employés</span>
+        </p>
+        <p class="mt-2">{{ profile.description|truncatewords:80 }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- ONGLET COMPTE DE RÉSULTATS -->
+{% elif active_tab == 'income' %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Compte de résultats annuel (en millions $)</h5>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Année</th>
+                        <th class="text-end">Revenus</th>
+                        <th class="text-end">Bénéfice brut</th>
+                        <th class="text-end">EBITDA</th>
+                        <th class="text-end">Résultat net</th>
+                        <th class="text-end">Marge brute</th>
+                        <th class="text-end">Marge nette</th>
+                        <th class="text-end">BPA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in income_statements %}
+                    <tr>
+                        <td><strong>{{ s.calendarYear }}</strong></td>
+                        <td class="text-end">{{ s.revenue|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.grossProfit|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.ebitda|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.netIncome|floatformat:0 }}</td>
+                        <td class="text-end">
+                            {% if s.grossProfitRatio %}
+                                {{ s.grossProfitRatio|floatformat:1 }}%
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            {% if s.netIncomeRatio %}
+                                {{ s.netIncomeRatio|floatformat:1 }}%
+                            {% endif %}
+                        </td>
+                        <td class="text-end">{{ s.eps|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ONGLET BILAN -->
+{% elif active_tab == 'balance' %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Bilan comptable annuel (en millions $)</h5>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Année</th>
+                        <th class="text-end">Total Actif</th>
+                        <th class="text-end">Actif courant</th>
+                        <th class="text-end">Trésorerie</th>
+                        <th class="text-end">Total Passif</th>
+                        <th class="text-end">Dette LT</th>
+                        <th class="text-end">Fonds propres</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in balance_sheets %}
+                    <tr>
+                        <td><strong>{{ s.calendarYear }}</strong></td>
+                        <td class="text-end">{{ s.totalAssets|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.totalCurrentAssets|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.cashAndCashEquivalents|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.totalLiabilities|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.longTermDebt|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.totalStockholdersEquity|floatformat:0 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ONGLET CASH FLOW -->
+{% elif active_tab == 'cashflow' %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Flux de trésorerie annuel (en millions $)</h5>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Année</th>
+                        <th class="text-end">Cash opérationnel</th>
+                        <th class="text-end">Capex</th>
+                        <th class="text-end">Free Cash Flow</th>
+                        <th class="text-end">Cash investissement</th>
+                        <th class="text-end">Cash financement</th>
+                        <th class="text-end">Dividendes versés</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in cash_flows %}
+                    <tr>
+                        <td><strong>{{ s.calendarYear }}</strong></td>
+                        <td class="text-end">{{ s.operatingCashFlow|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.capitalExpenditure|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.freeCashFlow|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.netCashUsedForInvestingActivites|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.netCashUsedProvidedByFinancingActivities|floatformat:0 }}</td>
+                        <td class="text-end">{{ s.dividendsPaid|floatformat:0 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<a href="{% url 'search' %}" class="btn btn-outline-secondary mt-3">
+    <i class="bi bi-arrow-left"></i> Retour à la recherche
+</a>
+
+{% endblock %}
+
+{% block scripts %}
+{% if chart_data %}
+<script>
+const years = {{ chart_data.years|safe }};
+const revenues = {{ chart_data.revenues|safe }};
+const netIncomes = {{ chart_data.net_incomes|safe }};
+const grossMargins = {{ chart_data.gross_margins|safe }};
+const netMargins = {{ chart_data.net_margins|safe }};
+
+// Graphique revenus & bénéfice
+new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+        labels: years,
+        datasets: [
+            {
+                label: 'Revenus',
+                data: revenues,
+                backgroundColor: '#4e73df',
+                borderRadius: 4,
+            },
+            {
+                label: 'Bénéfice net',
+                data: netIncomes,
+                backgroundColor: '#1cc88a',
+                borderRadius: 4,
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+// Graphique marges
+new Chart(document.getElementById('marginChart'), {
+    type: 'line',
+    data: {
+        labels: years,
+        datasets: [
+            {
+                label: 'Marge brute %',
+                data: grossMargins,
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78,115,223,0.1)',
+                tension: 0.3,
+                fill: true,
+            },
+            {
+                label: 'Marge nette %',
+                data: netMargins,
+                borderColor: '#1cc88a',
+                backgroundColor: 'rgba(28,200,138,0.1)',
+                tension: 0.3,
+                fill: true,
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

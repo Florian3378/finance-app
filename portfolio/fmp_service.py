@@ -52,3 +52,75 @@ def get_company_profile(symbol):
     except Exception as e:
         print(f"Erreur FMP get_company_profile({symbol}): {e}")
         return None
+    
+def get_income_statement(symbol, limit=10):
+    """Compte de résultats annuel"""
+    url = f"{BASE_URL}/income-statement?symbol={symbol}&limit={limit}&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        return response.json()
+    except Exception as e:
+        print(f"Erreur FMP income_statement({symbol}): {e}")
+        return []
+
+def get_balance_sheet(symbol, limit=10):
+    """Bilan comptable annuel"""
+    url = f"{BASE_URL}/balance-sheet-statement?symbol={symbol}&limit={limit}&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        return response.json()
+    except Exception as e:
+        print(f"Erreur FMP balance_sheet({symbol}): {e}")
+        return []
+
+def get_cash_flow(symbol, limit=10):
+    """Flux de trésorerie annuel"""
+    url = f"{BASE_URL}/cash-flow-statement?symbol={symbol}&limit={limit}&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        return response.json()
+    except Exception as e:
+        print(f"Erreur FMP cash_flow({symbol}): {e}")
+        return []
+
+def get_key_metrics(symbol, limit=10):
+    """Métriques clés (PER, PEG, ROE, ROA...)"""
+    url = f"{BASE_URL}/key-metrics?symbol={symbol}&limit={limit}&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        return response.json()
+    except Exception as e:
+        print(f"Erreur FMP key_metrics({symbol}): {e}")
+        return []
+
+def get_ratios(symbol, limit=10):
+    """Ratios financiers"""
+    url = f"{BASE_URL}/ratios?symbol={symbol}&limit={limit}&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        return response.json()
+    except Exception as e:
+        print(f"Erreur FMP ratios({symbol}): {e}")
+        return []
+
+def get_ratios_ttm(symbol):
+    """Ratios TTM (Trailing Twelve Months) — les plus récents"""
+    url = f"{BASE_URL}/ratios-ttm?symbol={symbol}&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        return data[0] if data else {}
+    except Exception as e:
+        print(f"Erreur FMP ratios_ttm({symbol}): {e}")
+        return {}
+
+def get_key_metrics_ttm(symbol):
+    """Métriques TTM"""
+    url = f"{BASE_URL}/key-metrics-ttm?symbol={symbol}&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        return data[0] if data else {}
+    except Exception as e:
+        print(f"Erreur FMP key_metrics_ttm({symbol}): {e}")
+        return {}
