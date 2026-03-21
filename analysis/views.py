@@ -6,6 +6,20 @@ from portfolio.fmp_service import (
     get_income_statement, get_balance_sheet, get_cash_flow,
 )
 from .ratios import calculate_ratios
+from .scoring import calculate_score
+
+
+def enrich_income_statements(statements):
+    """Ajoute les marges calculées à chaque année"""
+    enriched = []
+    for s in statements:
+        revenue = s.get('revenue') or 0
+        s['gross_margin'] = round(s.get('grossProfit', 0) / revenue * 100, 2) if revenue else None
+        s['operating_margin'] = round(s.get('operatingIncome', 0) / revenue * 100, 2) if revenue else None
+        s['net_margin'] = round(s.get('netIncome', 0) / revenue * 100, 2) if revenue else None
+        s['ebitda_margin'] = round(s.get('ebitda', 0) / revenue * 100, 2) if revenue else None
+        enriched.append(s)
+    return enriched
 
 
 @login_required
@@ -32,6 +46,7 @@ def company_view(request, symbol):
     profile = get_company_profile(symbol) or {}
     quote = get_quote(symbol) or {}
     income_statements = get_income_statement(symbol, limit=period)
+    income_statements = enrich_income_statements(income_statements)
     balance_sheets = get_balance_sheet(symbol, limit=period)
     cash_flows = get_cash_flow(symbol, limit=period)
 
@@ -40,17 +55,31 @@ def company_view(request, symbol):
         profile, quote,
         income_statements, balance_sheets, cash_flows
     )
+    scoring = calculate_score(ratios)
 
     # ── DONNÉES GRAPHIQUES ────────────────────────────────────
     chart_data = {}
     if income_statements:
         rev_data = list(reversed(income_statements))
         chart_data = {
-            'years': json.dumps([s.get('calendarYear', '') for s in rev_data]),
+            'years': json.dumps([s.get('date', '')[:4] for s in rev_data]),
             'revenues': json.dumps([round((s.get('revenue') or 0) / 1e9, 2) for s in rev_data]),
             'net_incomes': json.dumps([round((s.get('netIncome') or 0) / 1e9, 2) for s in rev_data]),
-            'gross_margins': json.dumps([round((s.get('grossProfitRatio') or 0) * 100, 2) for s in rev_data]),
-            'net_margins': json.dumps([round((s.get('netIncomeRatio') or 0) * 100, 2) for s in rev_data]),
+            'gross_margins': json.dumps([
+                round(s.get('grossProfit', 0) / s.get('revenue', 1) * 100, 2)
+                if s.get('revenue') else 0
+                for s in rev_data
+            ]),
+            'net_margins': json.dumps([
+                round(s.get('netIncome', 0) / s.get('revenue', 1) * 100, 2)
+                if s.get('revenue') else 0
+                for s in rev_data
+            ]),
+            'operating_margins': json.dumps([
+                round(s.get('operatingIncome', 0) / s.get('revenue', 1) * 100, 2)
+                if s.get('revenue') else 0
+                for s in rev_data
+            ]),
             'fcf': json.dumps([round((cf.get('freeCashFlow') or 0) / 1e9, 2) for cf in list(reversed(cash_flows))]) if cash_flows else json.dumps([]),
         }
 
@@ -61,6 +90,7 @@ def company_view(request, symbol):
         'active_tab': active_tab,
         'period': period,
         'ratios': ratios,
+        'scoring': scoring,
         'income_statements': income_statements,
         'balance_sheets': balance_sheets,
         'cash_flows': cash_flows,

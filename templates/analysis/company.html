@@ -3,6 +3,9 @@
 
 {% block content %}
 
+<p>active_tab = "{{ active_tab }}"</p>
+<p>chart_data vide = {% if chart_data %}NON{% else %}OUI{% endif %}</p>
+
 <!-- En-tête -->
 <div class="d-flex justify-content-between align-items-start mb-3">
     <div class="d-flex align-items-center gap-3">
@@ -25,6 +28,56 @@
         </span>
     </div>
 </div>
+
+<!-- Score global -->
+{% if scoring %}
+<div class="card mb-3 border-{{ scoring.global_color }}">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
+            <!-- Score -->
+            <div class="col-md-3 text-center border-end">
+                <div class="display-4 fw-bold text-{{ scoring.global_color }}">
+                    {{ scoring.global_score }}
+                    <span class="fs-5 text-muted">/100</span>
+                </div>
+                <div class="badge bg-{{ scoring.global_color }} fs-6 mt-1">
+                    {{ scoring.global_emoji }} {{ scoring.global_label }}
+                </div>
+            </div>
+            <!-- Points forts -->
+            <div class="col-md-4 border-end ps-4">
+                <h6 class="text-success mb-2">
+                    <i class="bi bi-check-circle-fill"></i> Points forts
+                </h6>
+                {% if scoring.strengths %}
+                <ul class="list-unstyled mb-0 small">
+                    {% for s in scoring.strengths %}
+                    <li><i class="bi bi-check text-success"></i> {{ s }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted small mb-0">Aucun point fort identifié</p>
+                {% endif %}
+            </div>
+            <!-- Points faibles -->
+            <div class="col-md-4 ps-4">
+                <h6 class="text-danger mb-2">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Points faibles
+                </h6>
+                {% if scoring.weaknesses %}
+                <ul class="list-unstyled mb-0 small">
+                    {% for w in scoring.weaknesses %}
+                    <li><i class="bi bi-x text-danger"></i> {{ w }}</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted small mb-0">Aucun point faible majeur</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Sélecteur de période -->
 <div class="d-flex justify-content-end mb-3">
@@ -80,20 +133,46 @@
             <div class="card-body">
                 <h6 class="card-title text-primary">💰 Valorisation</h6>
                 <table class="table table-sm mb-0">
-                    <tr><td class="text-muted small">PER</td>
-                        <td class="text-end fw-bold">{{ ratios.per|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">PEG</td>
-                        <td class="text-end fw-bold">{{ ratios.peg|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">P/B</td>
-                        <td class="text-end fw-bold">{{ ratios.pb|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">P/S</td>
-                        <td class="text-end fw-bold">{{ ratios.ps|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">P/FCF</td>
-                        <td class="text-end fw-bold">{{ ratios.pcf|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">EV/EBITDA</td>
-                        <td class="text-end fw-bold">{{ ratios.ev_ebitda|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">EV (Mrd$)</td>
-                        <td class="text-end fw-bold">{{ ratios.ev|default:"—" }}</td></tr>
+                    {% with s=scoring.scored_ratios %}
+                    <tr>
+                        <td class="text-muted small">PER</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{{ ratios.per|default:"—" }}</span>
+                            {% if s.per.label != 'N/A' %}
+                            <span class="badge bg-{{ s.per.color }} ms-1 small">{{ s.per.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">PEG</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{{ ratios.peg|default:"—" }}</span>
+                            {% if s.peg.label != 'N/A' %}
+                            <span class="badge bg-{{ s.peg.color }} ms-1 small">{{ s.peg.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">P/B</td>
+                        <td class="text-end fw-bold">{{ ratios.pb|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">P/S</td>
+                        <td class="text-end fw-bold">{{ ratios.ps|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">P/FCF</td>
+                        <td class="text-end fw-bold">{{ ratios.pcf|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">EV/EBITDA</td>
+                        <td class="text-end fw-bold">{{ ratios.ev_ebitda|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">EV (Mrd$)</td>
+                        <td class="text-end fw-bold">{{ ratios.ev|default:"—" }}</td>
+                    </tr>
+                    {% endwith %}
                 </table>
             </div>
         </div>
@@ -105,24 +184,74 @@
             <div class="card-body">
                 <h6 class="card-title text-success">📈 Rentabilité</h6>
                 <table class="table table-sm mb-0">
-                    <tr><td class="text-muted small">Marge brute</td>
-                        <td class="text-end fw-bold">{% if ratios.gross_margin %}{{ ratios.gross_margin }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">Marge opé.</td>
-                        <td class="text-end fw-bold">{% if ratios.operating_margin %}{{ ratios.operating_margin }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">Marge nette</td>
-                        <td class="text-end fw-bold">{% if ratios.net_margin %}{{ ratios.net_margin }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">Marge EBITDA</td>
-                        <td class="text-end fw-bold">{% if ratios.ebitda_margin %}{{ ratios.ebitda_margin }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">Marge FCF</td>
-                        <td class="text-end fw-bold">{% if ratios.fcf_margin %}{{ ratios.fcf_margin }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">ROE</td>
-                        <td class="text-end fw-bold">{% if ratios.roe %}{{ ratios.roe }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">ROA</td>
-                        <td class="text-end fw-bold">{% if ratios.roa %}{{ ratios.roa }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">ROCE</td>
-                        <td class="text-end fw-bold">{% if ratios.roce %}{{ ratios.roce }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">ROIC</td>
-                        <td class="text-end fw-bold">{% if ratios.roic %}{{ ratios.roic }}%{% else %}—{% endif %}</td></tr>
+                    {% with s=scoring.scored_ratios %}
+                    <tr>
+                        <td class="text-muted small">Marge brute</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{% if ratios.gross_margin %}{{ ratios.gross_margin }}%{% else %}—{% endif %}</span>
+                            {% if s.gross_margin.label != 'N/A' %}
+                            <span class="badge bg-{{ s.gross_margin.color }} ms-1 small">{{ s.gross_margin.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Marge opé.</td>
+                        <td class="text-end fw-bold">{% if ratios.operating_margin %}{{ ratios.operating_margin }}%{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Marge nette</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{% if ratios.net_margin %}{{ ratios.net_margin }}%{% else %}—{% endif %}</span>
+                            {% if s.net_margin.label != 'N/A' %}
+                            <span class="badge bg-{{ s.net_margin.color }} ms-1 small">{{ s.net_margin.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Marge EBITDA</td>
+                        <td class="text-end fw-bold">{% if ratios.ebitda_margin %}{{ ratios.ebitda_margin }}%{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Marge FCF</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{% if ratios.fcf_margin %}{{ ratios.fcf_margin }}%{% else %}—{% endif %}</span>
+                            {% if s.fcf_margin.label != 'N/A' %}
+                            <span class="badge bg-{{ s.fcf_margin.color }} ms-1 small">{{ s.fcf_margin.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">ROE</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{% if ratios.roe %}{{ ratios.roe }}%{% else %}—{% endif %}</span>
+                            {% if s.roe.label != 'N/A' %}
+                            <span class="badge bg-{{ s.roe.color }} ms-1 small">{{ s.roe.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">ROA</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{% if ratios.roa %}{{ ratios.roa }}%{% else %}—{% endif %}</span>
+                            {% if s.roa.label != 'N/A' %}
+                            <span class="badge bg-{{ s.roa.color }} ms-1 small">{{ s.roa.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">ROCE</td>
+                        <td class="text-end fw-bold">{% if ratios.roce %}{{ ratios.roce }}%{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">ROIC</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{% if ratios.roic %}{{ ratios.roic }}%{% else %}—{% endif %}</span>
+                            {% if s.roic.label != 'N/A' %}
+                            <span class="badge bg-{{ s.roic.color }} ms-1 small">{{ s.roic.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endwith %}
                 </table>
             </div>
         </div>
@@ -134,18 +263,42 @@
             <div class="card-body">
                 <h6 class="card-title text-warning">🏦 Solidité financière</h6>
                 <table class="table table-sm mb-0">
-                    <tr><td class="text-muted small">Ratio courant</td>
-                        <td class="text-end fw-bold">{{ ratios.current_ratio|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">Ratio rapide</td>
-                        <td class="text-end fw-bold">{{ ratios.quick_ratio|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">Dette/Fonds propres</td>
-                        <td class="text-end fw-bold">{{ ratios.debt_to_equity|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">Dette/Actifs</td>
-                        <td class="text-end fw-bold">{{ ratios.debt_to_assets|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">Couverture intérêts</td>
-                        <td class="text-end fw-bold">{{ ratios.interest_coverage|default:"—" }}</td></tr>
-                    <tr><td class="text-muted small">Dette nette (Mrd$)</td>
-                        <td class="text-end fw-bold">{{ ratios.net_debt|default:"—" }}</td></tr>
+                    {% with s=scoring.scored_ratios %}
+                    <tr>
+                        <td class="text-muted small">Ratio courant</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{{ ratios.current_ratio|default:"—" }}</span>
+                            {% if s.current_ratio.label != 'N/A' %}
+                            <span class="badge bg-{{ s.current_ratio.color }} ms-1 small">{{ s.current_ratio.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Ratio rapide</td>
+                        <td class="text-end fw-bold">{{ ratios.quick_ratio|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Dette/Fonds propres</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{{ ratios.debt_to_equity|default:"—" }}</span>
+                            {% if s.debt_to_equity.label != 'N/A' %}
+                            <span class="badge bg-{{ s.debt_to_equity.color }} ms-1 small">{{ s.debt_to_equity.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Dette/Actifs</td>
+                        <td class="text-end fw-bold">{{ ratios.debt_to_assets|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Couverture intérêts</td>
+                        <td class="text-end fw-bold">{{ ratios.interest_coverage|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Dette nette (Mrd$)</td>
+                        <td class="text-end fw-bold">{{ ratios.net_debt|default:"—" }}</td>
+                    </tr>
+                    {% endwith %}
                 </table>
             </div>
         </div>
@@ -157,19 +310,33 @@
             <div class="card-body">
                 <h6 class="card-title text-info">🌱 Croissance & Dividendes</h6>
                 <table class="table table-sm mb-0">
-                    <tr><td class="text-muted small">Croissance CA</td>
-                        <td class="text-end fw-bold">{% if ratios.revenue_growth %}{{ ratios.revenue_growth }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">Croissance RN</td>
-                        <td class="text-end fw-bold">{% if ratios.net_income_growth %}{{ ratios.net_income_growth }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">Rendement div.</td>
-                        <td class="text-end fw-bold">{% if ratios.dividend_yield %}{{ ratios.dividend_yield }}%{% else %}—{% endif %}</td></tr>
-                    <tr><td class="text-muted small">Taux distribution</td>
-                        <td class="text-end fw-bold">{% if ratios.payout_ratio %}{{ ratios.payout_ratio }}%{% else %}—{% endif %}</td></tr>
+                    {% with s=scoring.scored_ratios %}
+                    <tr>
+                        <td class="text-muted small">Croissance CA</td>
+                        <td class="text-end">
+                            <span class="fw-bold">{% if ratios.revenue_growth %}{{ ratios.revenue_growth }}%{% else %}—{% endif %}</span>
+                            {% if s.revenue_growth.label != 'N/A' %}
+                            <span class="badge bg-{{ s.revenue_growth.color }} ms-1 small">{{ s.revenue_growth.label }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Croissance RN</td>
+                        <td class="text-end fw-bold">{% if ratios.net_income_growth %}{{ ratios.net_income_growth }}%{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Rendement div.</td>
+                        <td class="text-end fw-bold">{% if ratios.dividend_yield %}{{ ratios.dividend_yield }}%{% else %}—{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted small">Taux distribution</td>
+                        <td class="text-end fw-bold">{% if ratios.payout_ratio %}{{ ratios.payout_ratio }}%{% else %}—{% endif %}</td>
+                    </tr>
+                    {% endwith %}
                 </table>
             </div>
         </div>
     </div>
-</div>
 
 <!-- Graphiques -->
 {% if chart_data %}
@@ -235,39 +402,79 @@
             <table class="table table-hover table-sm align-middle">
                 <thead class="table-dark">
                     <tr>
-                        <th>Année</th>
-                        <th class="text-end">Revenus</th>
-                        <th class="text-end">Bénéfice brut</th>
-                        <th class="text-end">EBITDA</th>
-                        <th class="text-end">Résultat opé.</th>
-                        <th class="text-end">Résultat net</th>
-                        <th class="text-end">Marge brute</th>
-                        <th class="text-end">Marge nette</th>
-                        <th class="text-end">BPA</th>
+                        <th>Indicateur</th>
+                        {% for s in income_statements %}
+                        <th class="text-end">{{ s.date|slice:":4" }}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for s in income_statements %}
                     <tr>
-                        <td><strong>{{ s.calendarYear }}</strong></td>
+                        <td class="text-muted">Revenus</td>
+                        {% for s in income_statements %}
                         <td class="text-end">{{ s.revenue|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.grossProfit|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.ebitda|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.operatingIncome|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.netIncome|floatformat:0 }}</td>
-                        <td class="text-end">
-                            {% if s.grossProfitRatio %}
-                                {{ s.grossProfitRatio|floatformat:1 }}%
-                            {% else %}—{% endif %}
-                        </td>
-                        <td class="text-end">
-                            {% if s.netIncomeRatio %}
-                                {{ s.netIncomeRatio|floatformat:1 }}%
-                            {% else %}—{% endif %}
-                        </td>
-                        <td class="text-end">{{ s.eps|floatformat:2 }}</td>
+                        {% endfor %}
                     </tr>
-                    {% endfor %}
+                    <tr>
+                        <td class="text-muted">Bénéfice brut</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{{ s.grossProfit|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted">EBITDA</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{{ s.ebitda|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Résultat opérationnel</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{{ s.operatingIncome|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Résultat net</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{{ s.netIncome|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="table-light">
+                        <td class="text-muted">Marge brute</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{% if s.gross_margin %}{{ s.gross_margin }}%{% else %}—{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="table-light">
+                        <td class="text-muted">Marge opérationnelle</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{% if s.operating_margin %}{{ s.operating_margin }}%{% else %}—{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="table-light">
+                        <td class="text-muted">Marge nette</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{% if s.net_margin %}{{ s.net_margin }}%{% else %}—{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="table-light">
+                        <td class="text-muted">Marge EBITDA</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{% if s.ebitda_margin %}{{ s.ebitda_margin }}%{% else %}—{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted">BPA</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{{ s.eps|floatformat:2 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted">BPA dilué</td>
+                        {% for s in income_statements %}
+                        <td class="text-end">{{ s.epsdiluted|floatformat:2 }}</td>
+                        {% endfor %}
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -289,29 +496,85 @@
             <table class="table table-hover table-sm align-middle">
                 <thead class="table-dark">
                     <tr>
-                        <th>Année</th>
-                        <th class="text-end">Total Actif</th>
-                        <th class="text-end">Actif courant</th>
-                        <th class="text-end">Trésorerie</th>
-                        <th class="text-end">Total Passif</th>
-                        <th class="text-end">Dette totale</th>
-                        <th class="text-end">Dette LT</th>
-                        <th class="text-end">Fonds propres</th>
+                        <th>Indicateur</th>
+                        {% for s in balance_sheets %}
+                        <th class="text-end">{{ s.date|slice:":4" }}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for s in balance_sheets %}
-                    <tr>
-                        <td><strong>{{ s.calendarYear }}</strong></td>
-                        <td class="text-end">{{ s.totalAssets|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.totalCurrentAssets|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.cashAndCashEquivalents|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.totalLiabilities|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.totalDebt|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.longTermDebt|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.totalStockholdersEquity|floatformat:0 }}</td>
+                    <tr class="fw-semibold">
+                        <td>ACTIF</td>
+                        {% for s in balance_sheets %}<td></td>{% endfor %}
                     </tr>
-                    {% endfor %}
+                    <tr>
+                        <td class="text-muted ps-3">Total Actif</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.totalAssets|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Actif courant</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.totalCurrentAssets|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Trésorerie</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.cashAndCashEquivalents|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Stocks</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.inventory|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="fw-semibold">
+                        <td>PASSIF</td>
+                        {% for s in balance_sheets %}<td></td>{% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Total Passif</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.totalLiabilities|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Dette totale</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.totalDebt|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Dette long terme</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.longTermDebt|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Dette court terme</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.shortTermDebt|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="fw-semibold">
+                        <td>FONDS PROPRES</td>
+                        {% for s in balance_sheets %}<td></td>{% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Fonds propres</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.totalStockholdersEquity|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Actions en circulation</td>
+                        {% for s in balance_sheets %}
+                        <td class="text-end">{{ s.commonStock|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -333,27 +596,73 @@
             <table class="table table-hover table-sm align-middle">
                 <thead class="table-dark">
                     <tr>
-                        <th>Année</th>
-                        <th class="text-end">Cash opérationnel</th>
-                        <th class="text-end">Capex</th>
-                        <th class="text-end">Free Cash Flow</th>
-                        <th class="text-end">Cash investissement</th>
-                        <th class="text-end">Cash financement</th>
-                        <th class="text-end">Dividendes versés</th>
+                        <th>Indicateur</th>
+                        {% for s in cash_flows %}
+                        <th class="text-end">{{ s.date|slice:":4" }}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for s in cash_flows %}
-                    <tr>
-                        <td><strong>{{ s.calendarYear }}</strong></td>
-                        <td class="text-end">{{ s.operatingCashFlow|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.capitalExpenditure|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.freeCashFlow|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.netCashUsedForInvestingActivites|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.netCashUsedProvidedByFinancingActivities|floatformat:0 }}</td>
-                        <td class="text-end">{{ s.dividendsPaid|floatformat:0 }}</td>
+                    <tr class="fw-semibold">
+                        <td>EXPLOITATION</td>
+                        {% for s in cash_flows %}<td></td>{% endfor %}
                     </tr>
-                    {% endfor %}
+                    <tr>
+                        <td class="text-muted ps-3">Cash opérationnel</td>
+                        {% for s in cash_flows %}
+                        <td class="text-end">{{ s.operatingCashFlow|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Dépréciations & Amort.</td>
+                        {% for s in cash_flows %}
+                        <td class="text-end">{{ s.depreciationAndAmortization|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="fw-semibold">
+                        <td>INVESTISSEMENT</td>
+                        {% for s in cash_flows %}<td></td>{% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Capex</td>
+                        {% for s in cash_flows %}
+                        <td class="text-end">{{ s.capitalExpenditure|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Free Cash Flow</td>
+                        {% for s in cash_flows %}
+                        <td class="text-end fw-bold">{{ s.freeCashFlow|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Cash investissement total</td>
+                        {% for s in cash_flows %}
+                        <td class="text-end">{{ s.netCashUsedForInvestingActivites|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr class="fw-semibold">
+                        <td>FINANCEMENT</td>
+                        {% for s in cash_flows %}<td></td>{% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Cash financement total</td>
+                        {% for s in cash_flows %}
+                        <td class="text-end">{{ s.netCashUsedProvidedByFinancingActivities|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Dividendes versés</td>
+                        {% for s in cash_flows %}
+                        <td class="text-end">{{ s.dividendsPaid|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-muted ps-3">Rachat d'actions</td>
+                        {% for s in cash_flows %}
+                        <td class="text-end">{{ s.commonStockRepurchased|floatformat:0 }}</td>
+                        {% endfor %}
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -378,6 +687,7 @@ const revenues = {{ chart_data.revenues|safe }};
 const netIncomes = {{ chart_data.net_incomes|safe }};
 const grossMargins = {{ chart_data.gross_margins|safe }};
 const netMargins = {{ chart_data.net_margins|safe }};
+const operatingMargins = {{ chart_data.operating_margins|safe }};
 const fcf = {{ chart_data.fcf|safe }};
 
 new Chart(document.getElementById('revenueChart'), {
@@ -419,6 +729,11 @@ new Chart(document.getElementById('marginChart'), {
             {
                 label: 'Marge brute %', data: grossMargins,
                 borderColor: '#4e73df', backgroundColor: 'rgba(78,115,223,0.1)',
+                tension: 0.3, fill: true
+            },
+            {
+                label: 'Marge opérationnelle %', data: operatingMargins,
+                borderColor: '#f6c23e', backgroundColor: 'rgba(246,194,62,0.1)',
                 tension: 0.3, fill: true
             },
             {
