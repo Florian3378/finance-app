@@ -128,3 +128,13 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
 LOGIN_URL = 'login'
+
+
+# Stock les données 24h dans un cache Django
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': BASE_DIR / 'cache',
+        'TIMEOUT': 60 * 60 * 24,  # 24 heures
+    }
+}

@@ -4,12 +4,12 @@ from django.contrib.auth.decorators import login_required
 from portfolio.fmp_service import (
     search_symbol, get_company_profile, get_quote,
     get_income_statement, get_balance_sheet, get_cash_flow,
-    get_key_metrics, get_ratios, get_ratios_ttm, get_key_metrics_ttm
 )
+from .ratios import calculate_ratios
+
 
 @login_required
 def search_view(request):
-    """Barre de recherche d'actions"""
     query = request.GET.get('q', '')
     results = []
     if query:
@@ -19,79 +19,47 @@ def search_view(request):
         'results': results
     })
 
+
 @login_required
 def company_view(request, symbol):
-    """Page principale d'analyse d'une entreprise"""
     symbol = symbol.upper()
     active_tab = request.GET.get('tab', 'profile')
+    period = int(request.GET.get('period', 5))
+    if period not in [5, 10]:
+        period = 5
 
-    # Données de base toujours chargées
+    # ── UN SEUL BLOC D'APPELS API (tout mis en cache) ────────
     profile = get_company_profile(symbol) or {}
     quote = get_quote(symbol) or {}
+    income_statements = get_income_statement(symbol, limit=period)
+    balance_sheets = get_balance_sheet(symbol, limit=period)
+    cash_flows = get_cash_flow(symbol, limit=period)
 
-    # Ratios TTM (toujours chargés pour l'onglet profil)
-    ratios_ttm = get_ratios_ttm(symbol)
-    metrics_ttm = get_key_metrics_ttm(symbol)
+    # ── CALCUL LOCAL DES RATIOS ───────────────────────────────
+    ratios = calculate_ratios(
+        profile, quote,
+        income_statements, balance_sheets, cash_flows
+    )
 
-    # Données chargées selon l'onglet actif
-    income_statements = []
-    balance_sheets = []
-    cash_flows = []
+    # ── DONNÉES GRAPHIQUES ────────────────────────────────────
     chart_data = {}
-
-    if active_tab in ['income', 'profile']:
-        income_statements = get_income_statement(symbol)
-
-    if active_tab == 'balance':
-        balance_sheets = get_balance_sheet(symbol)
-
-    if active_tab == 'cashflow':
-        cash_flows = get_cash_flow(symbol)
-
-    # Données pour les graphiques (onglet profil)
     if income_statements:
-        years = [s.get('calendarYear', '') for s in reversed(income_statements)]
-        revenues = [s.get('revenue', 0) / 1e9 for s in reversed(income_statements)]
-        net_incomes = [s.get('netIncome', 0) / 1e9 for s in reversed(income_statements)]
-        gross_margins = [
-            round(s.get('grossProfitRatio', 0) * 100, 2)
-            for s in reversed(income_statements)
-        ]
-        net_margins = [
-            round(s.get('netIncomeRatio', 0) * 100, 2)
-            for s in reversed(income_statements)
-        ]
+        rev_data = list(reversed(income_statements))
         chart_data = {
-            'years': json.dumps(years),
-            'revenues': json.dumps(revenues),
-            'net_incomes': json.dumps(net_incomes),
-            'gross_margins': json.dumps(gross_margins),
-            'net_margins': json.dumps(net_margins),
+            'years': json.dumps([s.get('calendarYear', '') for s in rev_data]),
+            'revenues': json.dumps([round((s.get('revenue') or 0) / 1e9, 2) for s in rev_data]),
+            'net_incomes': json.dumps([round((s.get('netIncome') or 0) / 1e9, 2) for s in rev_data]),
+            'gross_margins': json.dumps([round((s.get('grossProfitRatio') or 0) * 100, 2) for s in rev_data]),
+            'net_margins': json.dumps([round((s.get('netIncomeRatio') or 0) * 100, 2) for s in rev_data]),
+            'fcf': json.dumps([round((cf.get('freeCashFlow') or 0) / 1e9, 2) for cf in list(reversed(cash_flows))]) if cash_flows else json.dumps([]),
         }
-
-    # Calcul des ratios clés affichés
-    ratios = {
-        'per': ratios_ttm.get('priceEarningsRatioTTM') or metrics_ttm.get('peRatioTTM'),
-        'peg': ratios_ttm.get('priceEarningsToGrowthRatioTTM') or metrics_ttm.get('pegRatioTTM'),
-        'roe': ratios_ttm.get('returnOnEquityTTM'),
-        'roa': ratios_ttm.get('returnOnAssetsTTM'),
-        'roic': metrics_ttm.get('roicTTM'),
-        'gross_margin': ratios_ttm.get('grossProfitMarginTTM'),
-        'net_margin': ratios_ttm.get('netProfitMarginTTM'),
-        'debt_to_equity': ratios_ttm.get('debtEquityRatioTTM'),
-        'current_ratio': ratios_ttm.get('currentRatioTTM'),
-        'pb': ratios_ttm.get('priceToBookRatioTTM'),
-        'ps': ratios_ttm.get('priceToSalesRatioTTM'),
-        'ev_ebitda': metrics_ttm.get('evToEbitdaTTM'),
-        'dividend_yield': ratios_ttm.get('dividendYieldTTM'),
-        'payout_ratio': ratios_ttm.get('payoutRatioTTM'),
-    }
 
     context = {
         'profile': profile,
         'quote': quote,
         'symbol': symbol,
         'active_tab': active_tab,
+        'period': period,
         'ratios': ratios,
         'income_statements': income_statements,
         'balance_sheets': balance_sheets,
