@@ -4,6 +4,8 @@ from django.contrib import messages
 from .models import Position, Transaction
 from .forms import TransactionForm
 from .fmp_service import get_multiple_quotes, get_quote
+from .fmp_service import get_multiple_quotes, get_quote, get_company_profile
+import json
 
 @login_required
 def dashboard_view(request):
@@ -43,12 +45,41 @@ def dashboard_view(request):
     total_gain_loss = total_current_value - total_invested
     total_gain_loss_pct = (total_gain_loss / total_invested * 100) if total_invested > 0 else 0
 
+    # Données pour le graphique
+    chart_labels = [item['position'].symbol for item in portfolio_data]
+    chart_values = [round(item['current_value'], 2) for item in portfolio_data]
+    chart_colors = [
+        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+        '#858796', '#5a5c69', '#2e59d9', '#17a673', '#2c9faf'
+    ]
+
+    # Répartition par secteur
+    sector_data = {}
+    for item in portfolio_data:
+        sector = item['position'].sector or 'Non classifié'
+        if sector not in sector_data:
+            sector_data[sector] = 0
+        sector_data[sector] += item['current_value']
+
+    sector_labels = list(sector_data.keys())
+    sector_values = [round(v, 2) for v in sector_data.values()]
+    sector_colors = [
+        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+        '#858796', '#5a5c69', '#2e59d9', '#17a673', '#2c9faf'
+    ]
+
     context = {
         'portfolio_data': portfolio_data,
         'total_invested': total_invested,
         'total_current_value': total_current_value,
         'total_gain_loss': total_gain_loss,
         'total_gain_loss_pct': total_gain_loss_pct,
+        'chart_labels': json.dumps(chart_labels),
+        'chart_values': json.dumps(chart_values),
+        'chart_colors': json.dumps(chart_colors[:len(chart_labels)]),
+        'sector_labels': json.dumps(sector_labels),        # ← Nouveau
+        'sector_values': json.dumps(sector_values),        # ← Nouveau
+        'sector_colors': json.dumps(sector_colors[:len(sector_labels)]),  # ← Nouveau
     }
     return render(request, 'portfolio/dashboard.html', context)
 
@@ -75,6 +106,13 @@ def add_transaction_view(request):
                 symbol=symbol,
                 defaults={'name': name, 'currency': currency}
             )
+
+            # Si nouvelle position, récupère le secteur automatiquement
+            if created:
+                profile = get_company_profile(symbol)
+                if profile:
+                    position.sector = profile.get('sector', None)
+                    position.save()
 
             # Vérifie qu'on ne vend pas plus qu'on ne possède
             if transaction_type == 'SELL' and quantity > position.total_quantity:

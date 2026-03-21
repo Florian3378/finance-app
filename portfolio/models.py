@@ -6,6 +6,7 @@ class Position(models.Model):
     symbol = models.CharField(max_length=20)
     name = models.CharField(max_length=200)
     currency = models.CharField(max_length=5, default='USD')
+    sector = models.CharField(max_length=100, blank=True, null=True)  # ← Nouveau
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

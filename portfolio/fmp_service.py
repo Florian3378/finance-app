@@ -39,3 +39,16 @@ def get_multiple_quotes(symbols):
         if quote:
             quotes[symbol] = quote
     return quotes
+
+def get_company_profile(symbol):
+    """Récupère le profil complet d'une entreprise (secteur, industrie, description...)"""
+    url = f"{BASE_URL}/profile?symbol={symbol}&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        data = response.json()
+        if data and len(data) > 0:
+            return data[0]
+        return None
+    except Exception as e:
+        print(f"Erreur FMP get_company_profile({symbol}): {e}")
+        return None
