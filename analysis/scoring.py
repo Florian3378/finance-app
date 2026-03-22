@@ -37,6 +37,12 @@ def score_ratio(name, value):
             (15, 25, 40, 'Élevé', 'warning'),
             (25, float('inf'), 10, 'Très élevé', 'danger'),
         ],
+        'ev_revenue': [
+            (0, 2, 100, 'Attractif', 'success'),
+            (2, 5, 70, 'Correct', 'primary'),
+            (5, 10, 40, 'Élevé', 'warning'),
+            (10, float('inf'), 10, 'Très élevé', 'danger'),
+        ],
         # Rentabilité
         'roe': [
             (float('-inf'), 0, 0, 'Négatif', 'danger'),
@@ -85,6 +91,12 @@ def score_ratio(name, value):
             (1, 1.5, 45, 'Limite', 'warning'),
             (1.5, 3, 100, 'Bon', 'success'),
             (3, float('inf'), 65, 'Excédentaire', 'primary'),
+        ],
+        'quick_ratio': [
+            (float('-inf'), 0.5, 5, 'Dangereux', 'danger'),
+            (0.5, 1, 40, 'Limite', 'warning'),
+            (1, 2, 90, 'Bon', 'success'),
+            (2, float('inf'), 70, 'Excédentaire', 'primary'),
         ],
         'debt_to_equity': [
             (float('-inf'), 0, 100, 'Sans dette', 'success'),
@@ -172,6 +184,7 @@ def calculate_score(ratios):
         'pb': 15,
         'ps': 10,
         'pcf': 10,
+        'ev_revenue': 0,
     }
 
     # ── SÉCURITÉ ──────────────────────────────────────────────
@@ -179,7 +192,8 @@ def calculate_score(ratios):
         'debt_to_equity': 30,
         'interest_coverage': 25,
         'net_debt_ebitda': 25,
-        'current_ratio': 20,
+        'current_ratio': 15,
+        'quick_ratio': 5,
     }
 
     # ── QUALITÉ ───────────────────────────────────────────────

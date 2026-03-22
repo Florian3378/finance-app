@@ -1,7 +1,7 @@
 def safe_div(a, b):
     try:
-        if b and b != 0:
-            return a / b
+        if b and float(b) != 0 and a is not None:
+            return float(a) / float(b)
         return None
     except:
         return None
@@ -12,9 +12,12 @@ def pct(value, decimals=2):
     return None
 
 def fmt(value, decimals=2):
-    if value is not None:
-        return round(value, decimals)
-    return None
+    try:
+        if value is not None:
+            return round(float(value), decimals)
+        return None
+    except:
+        return None
 
 def cagr(start, end, years):
     """Calcule le taux de croissance annualisé"""
@@ -27,21 +30,20 @@ def cagr(start, end, years):
 
 
 def calculate_ratios(profile, quote, income_statements, balance_sheets,
-                     cash_flows, income_ttm=None, balance_ttm=None, cash_flow_ttm=None):
-
+                     cash_flows, income_ttm=None, balance_ttm=None, cashflow_ttm=None):
+    
     ratios = {}
     income_ttm = income_ttm or {}
     balance_ttm = balance_ttm or {}
-    cash_flow_ttm = cash_flow_ttm or {}
+    cashflow_ttm = cashflow_ttm or {}
 
     # Utilise TTM si dispo, sinon dernière année
-    inc = income_ttm if income_ttm else (income_statements[0] if income_statements else {})
-    bal = balance_ttm if balance_ttm else (balance_sheets[0] if balance_sheets else {})
-    cf = cash_flow_ttm if cash_flow_ttm else (cash_flows[0] if cash_flows else {})
-
+    inc = income_ttm if income_ttm and income_ttm.get('revenue') else (income_statements[0] if income_statements else {})
+    bal = balance_ttm if balance_ttm and balance_ttm.get('totalAssets') else (balance_sheets[0] if balance_sheets else {})
+    cf = cashflow_ttm if cashflow_ttm and cashflow_ttm.get('operatingCashFlow') else (cash_flows[0] if cash_flows else {})
     price = quote.get('price', 0) or 0
     shares = inc.get('weightedAverageShsOut') or (income_statements[0].get('weightedAverageShsOut', 0) if income_statements else 0)
-    market_cap = profile.get('mktCap', 0) or (price * shares if price and shares else 0)
+    market_cap = profile.get('marketCap', 0) or (price * shares if price and shares else 0)
 
     # ── COMPTE DE RÉSULTATS ───────────────────────────────────
     revenue = inc.get('revenue', 0) or 0
@@ -50,8 +52,11 @@ def calculate_ratios(profile, quote, income_statements, balance_sheets,
     operating_income = inc.get('operatingIncome', 0) or 0
     net_income = inc.get('netIncome', 0) or 0
     eps = inc.get('epsdiluted') or inc.get('eps', 0) or 0
+    # Interest expense — fallback sur dernière année si TTM = 0
     interest_expense = abs(inc.get('interestExpense', 0) or 0)
-
+    if interest_expense == 0 and income_statements:
+        interest_expense = abs(income_statements[0].get('interestExpense', 0) or 0)
+    
     # ── BILAN ─────────────────────────────────────────────────
     total_assets = bal.get('totalAssets', 0) or 0
     total_equity = bal.get('totalStockholdersEquity', 0) or 0
@@ -78,7 +83,8 @@ def calculate_ratios(profile, quote, income_statements, balance_sheets,
     ev = (market_cap or 0) + (total_debt or 0) - (cash or 0)
     ratios['ev'] = fmt(ev / 1e9) if ev else None
     ratios['ev_ebitda'] = fmt(safe_div(ev, ebitda)) if ebitda and ebitda > 0 else None
-    ratios['ev_revenue'] = fmt(safe_div(ev, revenue)) if revenue else None
+    print("DEBUG ev:", ev, "revenue:", revenue)
+    ratios['ev_revenue'] = fmt(safe_div(ev, revenue)) if revenue and ev else None
 
     # PEG
     if len(income_statements) >= 2:
@@ -105,10 +111,13 @@ def calculate_ratios(profile, quote, income_statements, balance_sheets,
     invested_capital = total_equity + total_debt - cash
     nopat = operating_income * 0.75
     ratios['roic'] = fmt(safe_div(nopat, invested_capital) * 100) if invested_capital else None
-
+    
     # ── SÉCURITÉ ──────────────────────────────────────────────
     ratios['current_ratio'] = fmt(safe_div(current_assets, current_liabilities))
-    ratios['quick_ratio'] = fmt(safe_div(current_assets - inventory, current_liabilities))
+    # Ratio rapide — vérifie que current_liabilities est bien utilisé
+    ratios['quick_ratio'] = fmt(
+        safe_div((current_assets or 0) - (inventory or 0), current_liabilities)
+    ) if current_liabilities else None    
     ratios['debt_to_equity'] = fmt(safe_div(total_debt, total_equity))
     ratios['debt_to_assets'] = fmt(safe_div(total_debt, total_assets))
     ratios['interest_coverage'] = fmt(safe_div(operating_income, interest_expense)) if interest_expense else None

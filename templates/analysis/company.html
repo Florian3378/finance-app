@@ -417,6 +417,9 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Indicateur</th>
+                        {% if income_ttm %}
+                        <th class="text-end table-warning">TTM</th>
+                        {% endif %}
                         {% for s in income_statements %}
                         <th class="text-end">{{ s.date|slice:":4" }}</th>
                         {% endfor %}
@@ -425,66 +428,99 @@
                 <tbody>
                     <tr>
                         <td class="text-muted">Revenus</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ income_ttm.revenue|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{{ s.revenue|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted">Bénéfice brut</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ income_ttm.grossProfit|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{{ s.grossProfit|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted">EBITDA</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ income_ttm.ebitda|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{{ s.ebitda|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted">Résultat opérationnel</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ income_ttm.operatingIncome|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{{ s.operatingIncome|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted">Résultat net</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ income_ttm.netIncome|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{{ s.netIncome|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr class="table-light">
                         <td class="text-muted">Marge brute</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{% if income_ttm.gross_margin %}{{ income_ttm.gross_margin }}%{% else %}—{% endif %}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{% if s.gross_margin %}{{ s.gross_margin }}%{% else %}—{% endif %}</td>
                         {% endfor %}
                     </tr>
                     <tr class="table-light">
                         <td class="text-muted">Marge opérationnelle</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{% if income_ttm.operating_margin %}{{ income_ttm.operating_margin }}%{% else %}—{% endif %}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{% if s.operating_margin %}{{ s.operating_margin }}%{% else %}—{% endif %}</td>
                         {% endfor %}
                     </tr>
                     <tr class="table-light">
                         <td class="text-muted">Marge nette</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{% if income_ttm.net_margin %}{{ income_ttm.net_margin }}%{% else %}—{% endif %}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{% if s.net_margin %}{{ s.net_margin }}%{% else %}—{% endif %}</td>
                         {% endfor %}
                     </tr>
                     <tr class="table-light">
                         <td class="text-muted">Marge EBITDA</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{% if income_ttm.ebitda_margin %}{{ income_ttm.ebitda_margin }}%{% else %}—{% endif %}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{% if s.ebitda_margin %}{{ s.ebitda_margin }}%{% else %}—{% endif %}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted">BPA</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ income_ttm.eps|floatformat:2 }}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{{ s.eps|floatformat:2 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted">BPA dilué</td>
+                        {% if income_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ income_ttm.epsdiluted|floatformat:2 }}</td>
+                        {% endif %}
                         {% for s in income_statements %}
                         <td class="text-end">{{ s.epsdiluted|floatformat:2 }}</td>
                         {% endfor %}
@@ -511,6 +547,9 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Indicateur</th>
+                        {% if balance_ttm %}
+                        <th class="text-end table-warning">TTM</th>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <th class="text-end">{{ s.date|slice:":4" }}</th>
                         {% endfor %}
@@ -523,24 +562,36 @@
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Total Actif</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalAssets|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.totalAssets|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Actif courant</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalCurrentAssets|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.totalCurrentAssets|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Trésorerie</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.cashAndCashEquivalents|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.cashAndCashEquivalents|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Stocks</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.inventory|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.inventory|floatformat:0 }}</td>
                         {% endfor %}
@@ -551,24 +602,36 @@
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Total Passif</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalLiabilities|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.totalLiabilities|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Dette totale</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalDebt|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.totalDebt|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Dette long terme</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.longTermDebt|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.longTermDebt|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Dette court terme</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.shortTermDebt|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.shortTermDebt|floatformat:0 }}</td>
                         {% endfor %}
@@ -579,12 +642,18 @@
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Fonds propres</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalStockholdersEquity|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.totalStockholdersEquity|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Actions en circulation</td>
+                        {% if balance_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ balance_ttm.commonStock|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in balance_sheets %}
                         <td class="text-end">{{ s.commonStock|floatformat:0 }}</td>
                         {% endfor %}
@@ -611,6 +680,9 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Indicateur</th>
+                        {% if cashflow_ttm %}
+                        <th class="text-end table-warning">TTM</th>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <th class="text-end">{{ s.date|slice:":4" }}</th>
                         {% endfor %}
@@ -623,12 +695,18 @@
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Cash opérationnel</td>
+                        {% if cashflow_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.operatingCashFlow|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <td class="text-end">{{ s.operatingCashFlow|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Dépréciations & Amort.</td>
+                        {% if cashflow_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.depreciationAndAmortization|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <td class="text-end">{{ s.depreciationAndAmortization|floatformat:0 }}</td>
                         {% endfor %}
@@ -639,18 +717,27 @@
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Capex</td>
+                        {% if cashflow_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.capitalExpenditure|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <td class="text-end">{{ s.capitalExpenditure|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Free Cash Flow</td>
+                        {% if cashflow_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.freeCashFlow|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <td class="text-end fw-bold">{{ s.freeCashFlow|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Cash investissement total</td>
+                        {% if cashflow_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.netCashUsedForInvestingActivites|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <td class="text-end">{{ s.netCashUsedForInvestingActivites|floatformat:0 }}</td>
                         {% endfor %}
@@ -661,18 +748,27 @@
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Cash financement total</td>
+                        {% if cashflow_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.netCashUsedProvidedByFinancingActivities|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <td class="text-end">{{ s.netCashUsedProvidedByFinancingActivities|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Dividendes versés</td>
+                        {% if cashflow_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.dividendsPaid|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <td class="text-end">{{ s.dividendsPaid|floatformat:0 }}</td>
                         {% endfor %}
                     </tr>
                     <tr>
                         <td class="text-muted ps-3">Rachat d'actions</td>
+                        {% if cashflow_ttm %}
+                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.commonStockRepurchased|floatformat:0 }}</td>
+                        {% endif %}
                         {% for s in cash_flows %}
                         <td class="text-end">{{ s.commonStockRepurchased|floatformat:0 }}</td>
                         {% endfor %}
@@ -730,7 +826,11 @@ function renderBars() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', renderBars);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderBars);
+} else {
+    renderBars();
+}
 
 new Chart(document.getElementById('revenueChart'), {
     type: 'bar',

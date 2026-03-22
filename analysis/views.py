@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from portfolio.fmp_service import (
     search_symbol, get_company_profile, get_quote,
     get_income_statement, get_balance_sheet, get_cash_flow,
-    get_income_statement_ttm, get_balance_sheet_ttm, get_cash_flow_ttm,
+    get_quarterly_income, get_quarterly_balance, get_quarterly_cashflow,
 )
 from .ratios import calculate_ratios
 from .scoring import calculate_score
@@ -22,6 +22,50 @@ def enrich_income_statements(statements):
         enriched.append(s)
     return enriched
 
+def compute_ttm(quarterly_income, quarterly_cashflow, quarterly_balance):
+    """
+    Calcule le TTM en additionnant les 4 derniers trimestres
+    pour le compte de résultats et le cash flow.
+    Le bilan utilise directement le dernier trimestre.
+    """
+    def sum_field(data, field):
+        return sum((q.get(field) or 0) for q in data)
+
+    if not quarterly_income:
+        return {}, {}, {}
+
+    # Compte de résultats TTM = somme des 4 trimestres
+    income_ttm = {
+        'revenue': sum_field(quarterly_income, 'revenue'),
+        'grossProfit': sum_field(quarterly_income, 'grossProfit'),
+        'operatingIncome': sum_field(quarterly_income, 'operatingIncome'),
+        'ebitda': sum_field(quarterly_income, 'ebitda'),
+        'netIncome': sum_field(quarterly_income, 'netIncome'),
+        'eps': sum_field(quarterly_income, 'eps'),
+        'epsdiluted': sum_field(quarterly_income, 'epsdiluted'),
+        'interestExpense': sum_field(quarterly_income, 'interestExpense'),
+        'weightedAverageShsOut': quarterly_income[0].get('weightedAverageShsOut', 0),
+        'date': 'TTM',
+    }
+
+    # Cash flow TTM = somme des 4 trimestres
+    cashflow_ttm = {
+        'operatingCashFlow': sum_field(quarterly_cashflow, 'operatingCashFlow'),
+        'capitalExpenditure': sum_field(quarterly_cashflow, 'capitalExpenditure'),
+        'freeCashFlow': sum_field(quarterly_cashflow, 'freeCashFlow'),
+        'dividendsPaid': sum_field(quarterly_cashflow, 'dividendsPaid'),
+        'commonStockRepurchased': sum_field(quarterly_cashflow, 'commonStockRepurchased'),
+        'depreciationAndAmortization': sum_field(quarterly_cashflow, 'depreciationAndAmortization'),
+        'netCashUsedForInvestingActivites': sum_field(quarterly_cashflow, 'netCashUsedForInvestingActivites'),
+        'netCashUsedProvidedByFinancingActivities': sum_field(quarterly_cashflow, 'netCashUsedProvidedByFinancingActivities'),
+        'date': 'TTM',
+    }
+
+    # Bilan TTM = dernier trimestre disponible
+    balance_ttm = dict(quarterly_balance)
+    balance_ttm['date'] = 'TTM'
+
+    return income_ttm, cashflow_ttm, balance_ttm
 
 @login_required
 def search_view(request):
@@ -50,15 +94,18 @@ def company_view(request, symbol):
     income_statements = enrich_income_statements(income_statements)
     balance_sheets = get_balance_sheet(symbol, limit=period)
     cash_flows = get_cash_flow(symbol, limit=period)
-    income_ttm = get_income_statement_ttm(symbol)
-    balance_ttm = get_balance_sheet_ttm(symbol)
-    cash_flow_ttm = get_cash_flow_ttm(symbol)
+    quarterly_income = get_quarterly_income(symbol)
+    quarterly_cashflow = get_quarterly_cashflow(symbol)
+    quarterly_balance = get_quarterly_balance(symbol)
+    income_ttm, cashflow_ttm, balance_ttm = compute_ttm(
+        quarterly_income, quarterly_cashflow, quarterly_balance
+    )
 
     # ── CALCUL LOCAL DES RATIOS ───────────────────────────────
     ratios = calculate_ratios(
         profile, quote,
         income_statements, balance_sheets, cash_flows,
-        income_ttm, balance_ttm, cash_flow_ttm,
+        income_ttm, cashflow_ttm, balance_ttm,
     )
     scoring = calculate_score(ratios)
 
@@ -88,6 +135,9 @@ def company_view(request, symbol):
             'fcf': json.dumps([round((cf.get('freeCashFlow') or 0) / 1e9, 2) for cf in list(reversed(cash_flows))]) if cash_flows else json.dumps([]),
         }
 
+    # Enrichit le TTM avec les marges calculées
+    income_ttm_enriched = enrich_income_statements([income_ttm])[0] if income_ttm else {}
+
     context = {
         'profile': profile,
         'quote': quote,
@@ -99,6 +149,9 @@ def company_view(request, symbol):
         'income_statements': income_statements,
         'balance_sheets': balance_sheets,
         'cash_flows': cash_flows,
+        'income_ttm': income_ttm_enriched,
+        'balance_ttm': balance_ttm,
+        'cashflow_ttm': cashflow_ttm,
         'chart_data': chart_data,
         'categories_display': [
             ('growth', 'Croissance'),

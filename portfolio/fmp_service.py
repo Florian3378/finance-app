@@ -15,7 +15,7 @@ def _get(url, cache_key, timeout=60 * 60 * 24):
     cached = cache.get(cache_key)
     if cached is not None:
         print(f"[CACHE HIT] {cache_key}")
-        return cached
+        return cached if cached != '__ERROR__' else None
     try:
         print(f"[API CALL] {url}")
         response = requests.get(url, timeout=10)
@@ -25,11 +25,12 @@ def _get(url, cache_key, timeout=60 * 60 * 24):
             return data
         else:
             print(f"[API ERROR] {response.status_code} - {response.text[:100]}")
+            # Cache l'erreur 1h pour éviter de rappeler inutilement
+            cache.set(cache_key, '__ERROR__', 60 * 60)
             return None
     except Exception as e:
         print(f"[API EXCEPTION] {e}")
         return None
-
 
 def get_quote(symbol):
     url = f"{BASE_URL}/quote?symbol={symbol}&apikey={API_KEY}"
@@ -77,20 +78,18 @@ def get_multiple_quotes(symbols):
             quotes[symbol] = quote
     return quotes
 
-def get_income_statement_ttm(symbol):
-    """Compte de résultats TTM"""
-    url = f"{BASE_URL}/income-statement-ttm?symbol={symbol}&apikey={API_KEY}"
-    data = _get(url, f"income_ttm_{symbol}")
+def get_quarterly_income(symbol, limit=4):
+    """4 derniers trimestres du compte de résultats"""
+    url = f"{BASE_URL}/income-statement?symbol={symbol}&period=quarter&limit={limit}&apikey={API_KEY}"
+    return _get(url, f"income_q_{symbol}_{limit}") or []
+
+def get_quarterly_balance(symbol):
+    """Dernier bilan trimestriel"""
+    url = f"{BASE_URL}/balance-sheet-statement?symbol={symbol}&period=quarter&limit=1&apikey={API_KEY}"
+    data = _get(url, f"balance_q_{symbol}")
     return data[0] if data else {}
 
-def get_balance_sheet_ttm(symbol):
-    """Bilan TTM"""
-    url = f"{BASE_URL}/balance-sheet-statement-ttm?symbol={symbol}&apikey={API_KEY}"
-    data = _get(url, f"balance_ttm_{symbol}")
-    return data[0] if data else {}
-
-def get_cash_flow_ttm(symbol):
-    """Cash flow TTM"""
-    url = f"{BASE_URL}/cash-flow-statement-ttm?symbol={symbol}&apikey={API_KEY}"
-    data = _get(url, f"cashflow_ttm_{symbol}")
-    return data[0] if data else {}
+def get_quarterly_cashflow(symbol, limit=4):
+    """4 derniers trimestres du cash flow"""
+    url = f"{BASE_URL}/cash-flow-statement?symbol={symbol}&period=quarter&limit={limit}&apikey={API_KEY}"
+    return _get(url, f"cashflow_q_{symbol}_{limit}") or []
