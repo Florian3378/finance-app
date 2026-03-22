@@ -157,8 +157,7 @@ def score_ratio(name, value):
     return 50, 'Correct', 'warning'
 
 
-def calculate_score(ratios):
-    # ── CROISSANCE ────────────────────────────────────────────
+def calculate_score(ratios, piotroski=None, beneish=None, altman=None):    # ── CROISSANCE ────────────────────────────────────────────
     growth_weights = {
         'revenue_cagr': 30,
         'net_income_cagr': 25,
@@ -197,42 +196,70 @@ def calculate_score(ratios):
     }
 
     # ── QUALITÉ ───────────────────────────────────────────────
-    def quality_score(ratios):
+    def quality_score(ratios, piotroski=None, beneish=None, altman=None):
         score = 0
         total = 0
 
-        # Consistance bénéfices
+        # Consistance bénéfices (20pts)
         profitable = ratios.get('profitable_years', 0)
         total_years = ratios.get('total_years', 1)
         if total_years > 0:
-            score += (profitable / total_years) * 100 * 25
-            total += 25
-
-        # Consistance FCF
-        positive_fcf = ratios.get('positive_fcf_years', 0)
-        if total_years > 0:
-            score += (positive_fcf / total_years) * 100 * 25
-            total += 25
-
-        # Rachat d'actions
-        buyback = ratios.get('shares_buyback')
-        if buyback is not None:
-            score += (100 if buyback else 20) * 20
+            score += (profitable / total_years) * 100 * 20
             total += 20
 
-        # Marge consistante
+        # Consistance FCF (20pts)
+        positive_fcf = ratios.get('positive_fcf_years', 0)
+        if total_years > 0:
+            score += (positive_fcf / total_years) * 100 * 20
+            total += 20
+
+        # Rachat d'actions (10pts)
+        buyback = ratios.get('shares_buyback')
+        if buyback is not None:
+            score += (100 if buyback else 20) * 10
+            total += 10
+
+        # Marge consistante (10pts)
         consistency = ratios.get('margin_consistency')
         if consistency is not None:
-            score += (100 if consistency else 30) * 15
-            total += 15
+            score += (100 if consistency else 30) * 10
+            total += 10
 
-        # Dividende croissant
+        # Dividende croissant (5pts)
         div_cagr = ratios.get('dividend_cagr')
         if div_cagr is not None:
             s, _, _ = score_ratio('revenue_cagr', div_cagr)
             if s:
-                score += s * 15
-                total += 15
+                score += s * 5
+                total += 5
+
+        # ── PIOTROSKI (20pts) ─────────────────────────────────────
+        if piotroski:
+            piotroski_score = (piotroski['total'] / 9) * 100
+            score += piotroski_score * 20
+            total += 20
+
+        # ── BENEISH (10pts) ───────────────────────────────────────
+        if beneish:
+            if beneish['color'] == 'success':
+                beneish_score = 90
+            elif beneish['color'] == 'warning':
+                beneish_score = 45
+            else:
+                beneish_score = 5
+            score += beneish_score * 10
+            total += 10
+
+        # ── ALTMAN (15pts) ────────────────────────────────────────
+        if altman:
+            if altman['color'] == 'success':
+                altman_score = 90
+            elif altman['color'] == 'warning':
+                altman_score = 45
+            else:
+                altman_score = 5
+            score += altman_score * 15
+            total += 15
 
         return round(score / total) if total > 0 else 50
 
@@ -254,8 +281,8 @@ def calculate_score(ratios):
     profitability_score, profitability_rated = weighted_category_score(profitability_weights, ratios)
     valuation_score, valuation_rated = weighted_category_score(valuation_weights, ratios)
     safety_score, safety_rated = weighted_category_score(safety_weights, ratios)
-    quality_sc = quality_score(ratios)
-
+    quality_sc = quality_score(ratios, piotroski, beneish, altman)
+    
     # Score global pondéré
     global_score = round(
         growth_score * 0.20 +

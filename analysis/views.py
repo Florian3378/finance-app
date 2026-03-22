@@ -113,8 +113,7 @@ def company_view(request, symbol):
         income_statements, balance_sheets, cash_flows,
         income_ttm, cashflow_ttm, balance_ttm,
     )
-    scoring = calculate_score(ratios)
-
+    
     # ── CALCUL PIOTROSKI/BENEISH/ALTMAN ───────────────────────────────
     piotroski = calculate_piotroski(
     income_statements, balance_sheets, cash_flows,
@@ -155,6 +154,8 @@ def company_view(request, symbol):
             for k, v in altman['details'].items()
         } if altman else {}
     }) if altman else 'null'
+
+    scoring = calculate_score(ratios, piotroski, beneish, altman)
 
     # ── DONNÉES GRAPHIQUES ────────────────────────────────────
     chart_data = {}
