@@ -24,6 +24,11 @@
             {{ quote.change|floatformat:2 }}
             ({{ quote.changesPercentage|floatformat:2 }}%)
         </span>
+        <div class="mt-2">
+            <a href="{% url 'valuation' symbol %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-calculator"></i> Valorisation
+            </a>
+        </div>
     </div>
 </div>
 

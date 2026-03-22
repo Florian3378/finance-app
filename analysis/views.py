@@ -10,6 +10,7 @@ from .ratios import calculate_ratios
 from .scoring import calculate_score
 from .piotroski import calculate_piotroski
 from .beneish import calculate_beneish
+from .valuation import calculate_all_valuations, SECTOR_PER
 
 
 def enrich_income_statements(statements):
@@ -218,3 +219,55 @@ def company_view(request, symbol):
         'beneish_json': beneish_json,
     }
     return render(request, 'analysis/company.html', context)
+
+
+@login_required
+def valuation_view(request, symbol):
+    symbol = symbol.upper()
+
+    # Récupération des données (avec cache)
+    profile = get_company_profile(symbol) or {}
+    quote = get_quote(symbol) or {}
+    income_statements = get_income_statement(symbol, limit=5)
+    income_statements = enrich_income_statements(income_statements)
+    balance_sheets = get_balance_sheet(symbol, limit=5)
+    cash_flows = get_cash_flow(symbol, limit=5)
+    quarterly_income = get_quarterly_income(symbol)
+    quarterly_cashflow = get_quarterly_cashflow(symbol)
+    quarterly_balance = get_quarterly_balance(symbol)
+    income_ttm, cashflow_ttm, balance_ttm = compute_ttm(
+        quarterly_income, quarterly_cashflow, quarterly_balance
+    )
+    ratios = calculate_ratios(
+        profile, quote, income_statements, balance_sheets, cash_flows,
+        income_ttm, cashflow_ttm, balance_ttm
+    )
+
+    # Paramètres par défaut basés sur le CAGR historique
+    default_growth = ratios.get('fcf_cagr') or ratios.get('revenue_cagr') or 5.0
+    default_growth = min(max(default_growth, 0), 30)  # Clamp 0-30%
+
+    params = {
+        'growth_rate_1': float(request.GET.get('g1', round(default_growth, 1))),
+        'growth_rate_2': float(request.GET.get('g2', round(default_growth * 0.6, 1))),
+        'terminal_growth': float(request.GET.get('gt', 3.0)),
+        'wacc': float(request.GET.get('wacc', 9.0)),
+        'treasury_rate': float(request.GET.get('tr', 4.5)),
+    }
+
+    valuations = calculate_all_valuations(
+        profile, quote, ratios,
+        income_statements, balance_sheets, cash_flows,
+        income_ttm, balance_ttm, cashflow_ttm,
+        params
+    )
+
+    context = {
+        'symbol': symbol,
+        'profile': profile,
+        'quote': quote,
+        'params': params,
+        'valuations': valuations,
+        'default_growth': default_growth,
+    }
+    return render(request, 'analysis/valuation.html', context)
