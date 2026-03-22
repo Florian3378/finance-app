@@ -42,3 +42,23 @@ body {
     color: white;
     flex-shrink: 0;
 }
+
+.piotroski-container {
+    display: inline-block;
+}
+
+.piotroski-tooltip {
+    display: none;
+    position: absolute;
+    right: 110%;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 12px;
+    width: 260px;
+    font-size: 0.8rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9999;
+}

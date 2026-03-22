@@ -8,6 +8,7 @@ from portfolio.fmp_service import (
 )
 from .ratios import calculate_ratios
 from .scoring import calculate_score
+from .piotroski import calculate_piotroski
 
 
 def enrich_income_statements(statements):
@@ -109,6 +110,12 @@ def company_view(request, symbol):
     )
     scoring = calculate_score(ratios)
 
+    # ── CALCUL PIOTROSKI ───────────────────────────────
+    piotroski = calculate_piotroski(
+    income_statements, balance_sheets, cash_flows,
+    income_ttm, cashflow_ttm, balance_ttm
+)
+
     # ── DONNÉES GRAPHIQUES ────────────────────────────────────
     chart_data = {}
     if income_statements:
@@ -190,5 +197,6 @@ def company_view(request, symbol):
             ('current_ratio', 'Ratio courant'),
             ('quick_ratio', 'Ratio rapide'),
         ],
+        'piotroski': piotroski,
     }
     return render(request, 'analysis/company.html', context)

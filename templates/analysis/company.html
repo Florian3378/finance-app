@@ -282,8 +282,8 @@
                             {{ scoring.categories.quality.score }}
                         </div>
                     </div>
-                    <!-- Qualité : indicateurs spéciaux -->
-                    {% with q=scoring.categories.quality %}
+
+                    <!-- Indicateurs de base -->
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
                             <span class="text-muted">Bénéfices positifs</span>
@@ -319,7 +319,7 @@
                                 style="width:0%"></div>
                         </div>
                     </div>
-                    <div class="mb-2">
+                    <div class="mb-3">
                         <div class="d-flex justify-content-between small mb-1">
                             <span class="text-muted">Marges consistantes</span>
                             <span class="fw-bold">
@@ -332,24 +332,47 @@
                                 style="width:0%"></div>
                         </div>
                     </div>
-                    {% if ratios.dividend_cagr %}
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">Croissance dividende</span>
-                            <span class="fw-bold">{{ ratios.dividend_cagr }}%</span>
+
+                    <!-- Piotroski F-Score -->
+                    {% if piotroski %}
+                    <div class="border-top pt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-semibold">Piotroski F-Score</span>
+                            <span class="badge bg-{{ piotroski.color }} fs-6"
+                                id="piotroskiBadge"
+                                style="cursor:pointer;">
+                                {{ piotroski.emoji }} {{ piotroski.total }}/9
+                            </span>
                         </div>
-                        <div class="ratio-bar">
+                        <div class="ratio-bar mb-2">
                             <div class="ratio-bar-fill"
-                                data-score="{% if ratios.dividend_cagr > 10 %}90{% elif ratios.dividend_cagr > 5 %}65{% else %}40{% endif %}"
+                                data-score="{% widthratio piotroski.total 9 100 %}"
                                 style="width:0%"></div>
                         </div>
+                        <p class="small text-muted mb-0">{{ piotroski.label }}</p>
                     </div>
+
+                    <!-- Données encodées en JSON pour le JS -->
+                    <script id="piotroskiJson" type="application/json">
+                    {
+                        "total": {{ piotroski.total }},
+                        "groups": {
+                            {% for group_name, criteria_keys in piotroski.groups.items %}
+                            "{{ group_name }}": [
+                                {% for key in criteria_keys %}
+                                {% with c=piotroski.details|get_item:key %}
+                                {"label": "{{ c.label }}", "pass": {{ c.pass|yesno:"true,false" }}}{% if not forloop.last %},{% endif %}
+                                {% endwith %}
+                                {% endfor %}
+                            ]{% if not forloop.last %},{% endif %}
+                            {% endfor %}
+                        }
+                    }
+                    </script>
                     {% endif %}
-                    {% endwith %}
                 </div>
             </div>
         </div>
-
     </div>
 
 <!-- Graphiques -->
@@ -830,6 +853,32 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', renderBars);
 } else {
     renderBars();
+}
+
+// Popover Piotroski
+const piotroskiEl = document.getElementById('piotroskiJson');
+const piotroskiBadge = document.getElementById('piotroskiBadge');
+
+if (piotroskiEl && piotroskiBadge) {
+    const data = JSON.parse(piotroskiEl.textContent);
+    
+    let content = '<div style="font-size:0.8rem;">';
+    for (const [group, criteria] of Object.entries(data.groups)) {
+        content += `<div class="fw-semibold mt-2 mb-1">${group}</div>`;
+        criteria.forEach(c => {
+            content += `<div>${c.pass ? '✅' : '❌'} ${c.label}</div>`;
+        });
+    }
+    content += '</div>';
+
+    new bootstrap.Popover(piotroskiBadge, {
+        trigger: 'hover focus',
+        placement: 'left',
+        html: true,
+        sanitize: false,
+        title: `Piotroski F-Score ${data.total}/9`,
+        content: content
+    });
 }
 
 new Chart(document.getElementById('revenueChart'), {
