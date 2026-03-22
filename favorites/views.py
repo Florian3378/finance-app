@@ -17,7 +17,7 @@ def favorites_list_view(request):
         for fav in favorites:
             quote = quotes.get(fav.symbol, {})
             price = quote.get('price', 0)
-            change_pct = quote.get('changesPercentage', 0)
+            change_pct = quote.get('changePercentage', 0)
             cap_label, cap_color = fav.cap_category
             
             favorites_data.append({

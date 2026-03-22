@@ -12,6 +12,8 @@ from .piotroski import calculate_piotroski
 from .beneish import calculate_beneish
 from .valuation import calculate_all_valuations, SECTOR_PER
 from portfolio.models import Favorite
+from .altman import calculate_altman
+import json as json_module
 
 
 def enrich_income_statements(statements):
@@ -113,7 +115,7 @@ def company_view(request, symbol):
     )
     scoring = calculate_score(ratios)
 
-    # ── CALCUL PIOTROSKI/BENEISH ───────────────────────────────
+    # ── CALCUL PIOTROSKI/BENEISH/ALTMAN ───────────────────────────────
     piotroski = calculate_piotroski(
     income_statements, balance_sheets, cash_flows,
     income_ttm, cashflow_ttm, balance_ttm
@@ -133,6 +135,26 @@ def company_view(request, symbol):
             for k, v in beneish['details'].items()
         } if beneish else {}
     }) if beneish else 'null'
+    altman = calculate_altman(
+        profile, quote,
+        income_statements, balance_sheets,
+        income_ttm, balance_ttm
+    )
+    altman_json = json_module.dumps({
+        'score': altman['score'] if altman else None,
+        'version': altman['version'] if altman else '',
+        'label': altman['label'] if altman else '',
+        'z_original': altman['z_original'] if altman else None,
+        'z_prime': altman['z_prime'] if altman else None,
+        'details': {
+            k: {
+                'label': v['label'],
+                'value': v['value'],
+                'interpretation': v['interpretation'],
+            }
+            for k, v in altman['details'].items()
+        } if altman else {}
+    }) if altman else 'null'
 
     # ── DONNÉES GRAPHIQUES ────────────────────────────────────
     chart_data = {}
@@ -222,6 +244,8 @@ def company_view(request, symbol):
         'piotroski': piotroski,
         'beneish': beneish,
         'beneish_json': beneish_json,
+        'altman': altman,
+        'altman_json': altman_json,
         'is_favorite': is_favorite,
     }
     return render(request, 'analysis/company.html', context)
