@@ -370,6 +370,29 @@
                     }
                     </script>
                     {% endif %}
+
+                    <!-- Beneish M-Score -->
+                    {% if beneish %}
+                    <div class="border-top pt-3 mt-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small fw-semibold">Beneish M-Score</span>
+                            <span class="badge bg-{{ beneish.color }} fs-6"
+                                id="beneishBadge"
+                                style="cursor:pointer;">
+                                {{ beneish.emoji }} {{ beneish.m_score }}
+                            </span>
+                        </div>
+                        <!-- Barre de progression -->
+                        <div class="ratio-bar mb-2">
+                            <div class="ratio-bar-fill"
+                                data-score="{% if beneish.color == 'success' %}85{% elif beneish.color == 'warning' %}45{% else %}10{% endif %}"
+                                style="width:0%"></div>
+                        </div>
+                        <p class="small text-muted mb-0">{{ beneish.label }}</p>
+                    </div>
+
+                    <script id="beneishJson" type="application/json">{{ beneish_json|safe }}</script>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -877,6 +900,33 @@ if (piotroskiEl && piotroskiBadge) {
         html: true,
         sanitize: false,
         title: `Piotroski F-Score ${data.total}/9`,
+        content: content
+    });
+}
+
+// Popover Beneish
+const beneishEl = document.getElementById('beneishJson');
+const beneishBadge = document.getElementById('beneishBadge');
+
+if (beneishEl && beneishBadge) {
+    const data = JSON.parse(beneishEl.textContent);
+
+    let content = `<div style="font-size:0.8rem;">`;
+    content += `<div class="mb-2 text-muted">Seuil : &gt; -1.78 = manipulation probable</div>`;
+    content += `<div class="mb-2"><strong>${data.warnings} alerte(s) détectée(s)</strong></div>`;
+
+    for (const [key, d] of Object.entries(data.details)) {
+        const icon = d.warning ? '⚠️' : '✅';
+        content += `<div class="mb-1">${icon} <strong>${key}</strong> = ${d.value ?? '—'} — ${d.label}</div>`;
+    }
+    content += `</div>`;
+
+    new bootstrap.Popover(beneishBadge, {
+        trigger: 'hover focus',
+        placement: 'left',
+        html: true,
+        sanitize: false,
+        title: `Beneish M-Score : ${data.m_score}`,
         content: content
     });
 }

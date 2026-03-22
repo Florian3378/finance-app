@@ -9,6 +9,7 @@ from portfolio.fmp_service import (
 from .ratios import calculate_ratios
 from .scoring import calculate_score
 from .piotroski import calculate_piotroski
+from .beneish import calculate_beneish
 
 
 def enrich_income_statements(statements):
@@ -110,11 +111,26 @@ def company_view(request, symbol):
     )
     scoring = calculate_score(ratios)
 
-    # ── CALCUL PIOTROSKI ───────────────────────────────
+    # ── CALCUL PIOTROSKI/BENEISH ───────────────────────────────
     piotroski = calculate_piotroski(
     income_statements, balance_sheets, cash_flows,
     income_ttm, cashflow_ttm, balance_ttm
-)
+    )
+    beneish = calculate_beneish(income_statements, balance_sheets, cash_flows)
+    beneish_json = json.dumps({
+        'm_score': beneish['m_score'] if beneish else None,
+        'label': beneish['label'] if beneish else '',
+        'warnings': beneish['warnings'] if beneish else 0,
+        'details': {
+            k: {
+                'value': v['value'],
+                'label': v['label'],
+                'interpretation': v['interpretation'],
+                'warning': bool(v['warning']),
+            }
+            for k, v in beneish['details'].items()
+        } if beneish else {}
+    }) if beneish else 'null'
 
     # ── DONNÉES GRAPHIQUES ────────────────────────────────────
     chart_data = {}
@@ -198,5 +214,7 @@ def company_view(request, symbol):
             ('quick_ratio', 'Ratio rapide'),
         ],
         'piotroski': piotroski,
+        'beneish': beneish,
+        'beneish_json': beneish_json,
     }
     return render(request, 'analysis/company.html', context)
