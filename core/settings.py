@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'users',
     'portfolio',
     'analysis',
+    'market',
 ]
 
 MIDDLEWARE = [
@@ -123,10 +124,8 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Redirection après login/logout
 
-LOGIN_REDIRECT_URL = 'dashboard'
-
+LOGIN_REDIRECT_URL = 'market'
 LOGOUT_REDIRECT_URL = 'login'
-
 LOGIN_URL = 'login'
 
 

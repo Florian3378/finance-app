@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Marché — FinanceApp{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>🌍 Marchés financiers</h2>
+    <span class="text-muted small">Données mises à jour toutes les 5 minutes</span>
+</div>
+
+<!-- Indices -->
+<div class="row mb-4">
+    {% for idx in indices %}
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body py-3">
+                <div class="text-muted small">{{ idx.display_name }}</div>
+                <div class="fs-5 fw-bold">{{ idx.price|floatformat:2 }}</div>
+                <div class="{% if idx.changesPercentage >= 0 %}text-success{% else %}text-danger{% endif %} small">
+                    {% if idx.changesPercentage >= 0 %}▲{% else %}▼{% endif %}
+                    {{ idx.changesPercentage|floatformat:2 }}%
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-warning">Données des indices non disponibles.</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Gainers / Losers / Actives -->
+<div class="row">
+
+    <!-- Top Hausses -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-success mb-3">
+                    <i class="bi bi-graph-up-arrow"></i> Top Hausses
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Symbole</th>
+                                <th>Prix</th>
+                                <th class="text-end">Variation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in gainers %}
+                            <tr style="cursor:pointer"
+                                onclick="window.location='{% url 'company' s.symbol %}'">
+                                <td>
+                                    <strong>{{ s.symbol }}</strong>
+                                    <div class="text-muted" style="font-size:0.7rem;">
+                                        {{ s.name|truncatechars:20 }}
+                                    </div>
+                                </td>
+                                <td>${{ s.price|floatformat:2 }}</td>
+                                <td class="text-end text-success fw-bold">
+                                    +{{ s.changesPercentage|floatformat:2 }}%
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-muted">Non disponible</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Baisses -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-danger mb-3">
+                    <i class="bi bi-graph-down-arrow"></i> Top Baisses
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Symbole</th>
+                                <th>Prix</th>
+                                <th class="text-end">Variation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in losers %}
+                            <tr style="cursor:pointer"
+                                onclick="window.location='{% url 'company' s.symbol %}'">
+                                <td>
+                                    <strong>{{ s.symbol }}</strong>
+                                    <div class="text-muted" style="font-size:0.7rem;">
+                                        {{ s.name|truncatechars:20 }}
+                                    </div>
+                                </td>
+                                <td>${{ s.price|floatformat:2 }}</td>
+                                <td class="text-end text-danger fw-bold">
+                                    {{ s.changesPercentage|floatformat:2 }}%
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-muted">Non disponible</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plus actives -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title text-primary mb-3">
+                    <i class="bi bi-activity"></i> Plus Actives
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Symbole</th>
+                                <th>Prix</th>
+                                <th class="text-end">Variation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in actives %}
+                            <tr style="cursor:pointer"
+                                onclick="window.location='{% url 'company' s.symbol %}'">
+                                <td>
+                                    <strong>{{ s.symbol }}</strong>
+                                    <div class="text-muted" style="font-size:0.7rem;">
+                                        {{ s.name|truncatechars:20 }}
+                                    </div>
+                                </td>
+                                <td>${{ s.price|floatformat:2 }}</td>
+                                <td class="text-end {% if s.changesPercentage >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                    {% if s.changesPercentage >= 0 %}+{% endif %}{{ s.changesPercentage|floatformat:2 }}%
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-muted">Non disponible</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

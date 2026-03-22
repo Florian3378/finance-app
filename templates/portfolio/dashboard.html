@@ -158,8 +158,10 @@
                 </thead>
                 <tbody>
                     {% for item in portfolio_data %}
+                    <tr {% if item.position.symbol %}style="cursor:pointer" 
+                        onclick="window.location='{% url 'company' item.position.symbol %}'"{% endif %}></tr>
                     <tr style="cursor:pointer"
-                        onclick="window.location='{% url 'position_detail' item.position.pk %}'">
+                        onclick="window.location='{% url 'company' item.position.symbol %}'">                        
                         <td><strong>{{ item.position.symbol }}</strong></td>
                         <td>{{ item.position.name }}</td>
                         <td>{{ item.position.total_quantity|floatformat:4 }}</td>
@@ -171,10 +173,8 @@
                             ({{ item.gain_loss_pct|floatformat:2 }}%)
                         </td>
                         <td>
-                            <a href="{% url 'add_transaction' %}?symbol={{ item.position.symbol }}&name={{ item.position.name }}"
-                               class="btn btn-sm btn-outline-primary"
-                               onclick="event.stopPropagation()">
-                                <i class="bi bi-plus"></i>
+                            <a href="{% url 'company' item.position.symbol %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-bar-chart"></i> Analyser
                             </a>
                         </td>
                     </tr>

@@ -93,3 +93,32 @@ def get_quarterly_cashflow(symbol, limit=4):
     """4 derniers trimestres du cash flow"""
     url = f"{BASE_URL}/cash-flow-statement?symbol={symbol}&period=quarter&limit={limit}&apikey={API_KEY}"
     return _get(url, f"cashflow_q_{symbol}_{limit}") or []
+
+def get_market_indices():
+    """Récupère les principaux indices boursiers"""
+    symbols = ['^GSPC', '^DJI', '^IXIC', '^FTSE', '^GDAXI', '^FCHI', '^N225']
+    results = []
+    for symbol in symbols:
+        url = f"{BASE_URL}/quote?symbol={symbol}&apikey={API_KEY}"
+        data = _get(url, f"index_{symbol}", timeout=60 * 60 * 12)
+        if data and len(data) > 0:
+            results.append(data[0])
+    return results
+
+def get_biggest_gainers():
+    """Top hausses du jour"""
+    url = f"{BASE_URL}/biggest-gainers?apikey={API_KEY}"
+    data = _get(url, "biggest_gainers", timeout=60 * 60 * 12)  # Cache 15 min
+    return data[:10] if data else []
+
+def get_biggest_losers():
+    """Top baisses du jour"""
+    url = f"{BASE_URL}/biggest-losers?apikey={API_KEY}"
+    data = _get(url, "biggest_losers", timeout=60 * 60 * 12)
+    return data[:10] if data else []
+
+def get_most_active():
+    """Actions les plus échangées"""
+    url = f"{BASE_URL}/most-actives?apikey={API_KEY}"
+    data = _get(url, "most_actives", timeout=60 * 60 * 12)
+    return data[:10] if data else []
