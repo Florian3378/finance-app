@@ -66,3 +66,33 @@ class Transaction(models.Model):
     @property
     def total_value(self):
         return float(self.quantity) * float(self.price)
+    
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    symbol = models.CharField(max_length=20)
+    name = models.CharField(max_length=200)
+    sector = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    market_cap = models.FloatField(null=True, blank=True)
+    currency = models.CharField(max_length=5, default='USD')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'symbol']
+        ordering = ['-added_at']
+
+    def __str__(self):
+        return f"{self.symbol} — {self.user.username}"
+
+    @property
+    def cap_category(self):
+        """Catégorise selon la capitalisation"""
+        if not self.market_cap:
+            return 'Unknown', 'secondary'
+        if self.market_cap >= 10e9:
+            return 'Large Cap', 'primary'
+        elif self.market_cap >= 2e9:
+            return 'Mid Cap', 'warning'
+        else:
+            return 'Small Cap', 'danger'

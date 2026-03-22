@@ -11,6 +11,7 @@ from .scoring import calculate_score
 from .piotroski import calculate_piotroski
 from .beneish import calculate_beneish
 from .valuation import calculate_all_valuations, SECTOR_PER
+from portfolio.models import Favorite
 
 
 def enrich_income_statements(statements):
@@ -162,6 +163,10 @@ def company_view(request, symbol):
     # Enrichit le TTM avec les marges calculées
     income_ttm_enriched = enrich_income_statements([income_ttm])[0] if income_ttm else {}
 
+    is_favorite = Favorite.objects.filter(
+        user=request.user, symbol=symbol
+    ).exists()
+
     context = {
         'profile': profile,
         'quote': quote,
@@ -217,6 +222,7 @@ def company_view(request, symbol):
         'piotroski': piotroski,
         'beneish': beneish,
         'beneish_json': beneish_json,
+        'is_favorite': is_favorite,
     }
     return render(request, 'analysis/company.html', context)
 

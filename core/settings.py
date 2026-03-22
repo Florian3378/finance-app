@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'portfolio',
     'analysis',
     'market',
+    'favorites',
 ]
 
 MIDDLEWARE = [

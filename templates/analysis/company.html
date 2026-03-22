@@ -24,9 +24,15 @@
             {{ quote.change|floatformat:2 }}
             ({{ quote.changesPercentage|floatformat:2 }}%)
         </span>
-        <div class="mt-2">
+        <div class="mt-2 d-flex gap-2">
             <a href="{% url 'valuation' symbol %}" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-calculator"></i> Valorisation
+            </a>
+            <a href="{% url 'toggle_favorite' symbol %}"
+            class="btn btn-sm {% if is_favorite %}btn-warning{% else %}btn-outline-warning{% endif %}"
+            id="favBtn">
+                <i class="bi bi-star{% if is_favorite %}-fill{% endif %}"></i>
+                {% if is_favorite %}Favori{% else %}Ajouter aux favoris{% endif %}
             </a>
         </div>
     </div>
