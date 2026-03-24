@@ -1,38 +1,52 @@
 {% extends 'base.html' %}
 {% load analysis_tags %}
-{% block title %}{{ symbol }} — Analyse{% endblock %}
+{% block title %}{{ symbol }} — Fundalyze{% endblock %}
 
 {% block content %}
 
-<!-- En-tête -->
-<div class="d-flex justify-content-between align-items-start mb-3">
+<!-- En-tête entreprise -->
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div class="d-flex align-items-center gap-3">
         {% if profile.image %}
         <img src="{{ profile.image }}" alt="{{ symbol }}"
-             style="width:50px;height:50px;object-fit:contain;">
+             style="width:40px;height:40px;object-fit:contain;border-radius:8px;">
         {% endif %}
         <div>
-            <h2 class="mb-0">{{ profile.companyName|default:symbol }}</h2>
-            <span class="text-muted">
-                {{ symbol }} · {{ profile.exchangeShortName }} · {{ profile.currency }}
+            <div class="d-flex align-items-baseline gap-3">
+                <h2 class="page-title mb-0">{{ profile.companyName|default:symbol }}</h2>
+                <span style="font-size:22px;font-weight:600;color:var(--text-primary);">
+                    ${{ quote.price|floatformat:2 }}
+                </span>
+                <span style="font-size:13px;" 
+                      class="{% if quote.change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ quote.change|floatformat:2 }} ({{ quote.changePercentage|floatformat:2 }}%)
+                </span>
+            </div>
+            <span style="font-size:12px;color:var(--text-muted);">
+                {{ symbol }}
+                {% if profile.exchangeShortName %}· {{ profile.exchangeShortName }}{% endif %}
+                {% if profile.currency %}· {{ profile.currency }}{% endif %}
             </span>
         </div>
     </div>
-    <div class="text-end">
-        <h3 class="mb-0">${{ quote.price|floatformat:2 }}</h3>
-        <span class="{% if quote.change >= 0 %}text-success{% else %}text-danger{% endif %}">
-            {{ quote.change|floatformat:2 }}
-            ({{ quote.changesPercentage|floatformat:2 }}%)
-        </span>
-        <div class="mt-2 d-flex gap-2">
-            <a href="{% url 'valuation' symbol %}" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-calculator"></i> Valorisation
+    <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'toggle_favorite' symbol %}"
+           class="btn btn-sm"
+           style="{% if is_favorite %}background:transparent;border:1px solid #F59E0B;color:#1B2A4A;{% else %}background:transparent;border:1px solid var(--border);color:var(--text-muted);{% endif %}">
+            <i class="bi bi-star{% if is_favorite %}-fill{% endif %}"
+               style="{% if is_favorite %}color:#F59E0B;{% endif %}"></i>
+            <span style="{% if is_favorite %}color:var(--navy);font-weight:500;{% endif %}">
+                {% if is_favorite %}Favori{% else %}+ Favori{% endif %}
+            </span>
+        </a>
+        <div class="btn-group btn-group-sm">
+            <a href="?period=5"
+               class="btn {% if period == 5 %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                5 ans
             </a>
-            <a href="{% url 'toggle_favorite' symbol %}"
-            class="btn btn-sm {% if is_favorite %}btn-warning{% else %}btn-outline-warning{% endif %}"
-            id="favBtn">
-                <i class="bi bi-star{% if is_favorite %}-fill{% endif %}"></i>
-                {% if is_favorite %}Favori{% else %}Ajouter aux favoris{% endif %}
+            <a href="?period=10"
+               class="btn {% if period == 10 %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                10 ans
             </a>
         </div>
     </div>
@@ -40,131 +54,159 @@
 
 <!-- Score global -->
 {% if scoring %}
-<div class="card mb-3 border-{{ scoring.global_color }}">
+<div class="card mb-4">
     <div class="card-body py-3">
+        <div class="row align-items-center g-0">
 
-        <!-- Score global + catégories -->
-        <div class="row align-items-center mb-3">
-            <div class="col-md-2 text-center border-end">
-                <div class="display-4 fw-bold text-{{ scoring.global_color }}">
-                    {{ scoring.global_score }}
-                    <span class="fs-5 text-muted">/100</span>
-                </div>
-                <div class="badge bg-{{ scoring.global_color }} fs-6 mt-1">
-                    {{ scoring.global_label }}
-                </div>
-            </div>
-            <div class="col-md-10">
-                <div class="row text-center">
-                    {% for cat_key, cat_name in categories_display %}
-                    {% with cat=scoring.categories|get_item:cat_key %}
-                    <div class="col">
-                        <div class="fw-bold fs-4 text-{{ cat.color }}">{{ cat.score }}</div>
-                        <div class="small text-muted">{{ cat_name }}</div>
-                        <div class="progress mt-1" style="height:6px;">
-                            <div class="progress-bar bg-{{ cat.color }}"
-                                 style="width:{{ cat.score }}%"></div>
+            <!-- Cercle de progression -->
+            <div class="col-auto pe-4" style="border-right:1px solid var(--border);">
+                <div style="position:relative;width:90px;height:90px;">
+                    <svg viewBox="0 0 90 90" style="width:90px;height:90px;transform:rotate(-90deg);">
+                        <circle cx="45" cy="45" r="38"
+                                fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="7"/>
+                        <circle cx="45" cy="45" r="38"
+                                fill="none"
+                                stroke="{% if scoring.global_score >= 65 %}#22C55E{% elif scoring.global_score >= 45 %}#F59E0B{% else %}#EF4444{% endif %}"
+                                stroke-width="7"
+                                stroke-linecap="round"
+                                stroke-dasharray="{{ scoring.global_score|floatformat:0 }} 100"
+                                stroke-dasharray="238.76"
+                                id="scoreCirclePath"/>
+                    </svg>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+                        <div style="font-size:22px;font-weight:700;
+                                    color:{% if scoring.global_score >= 65 %}#22C55E{% elif scoring.global_score >= 45 %}#F59E0B{% else %}#EF4444{% endif %};">
+                            {{ scoring.global_score }}
                         </div>
+                        <div style="font-size:10px;color:var(--text-muted);">/100</div>
                     </div>
-                    {% endwith %}
-                    {% endfor %}
                 </div>
             </div>
-        </div>
 
-        <!-- Points forts / faibles -->
-        <div class="row border-top pt-3">
-            <div class="col-md-6">
-                <h6 class="text-success mb-2">
-                    <i class="bi bi-check-circle-fill"></i> Points forts
-                </h6>
-                {% if scoring.strengths %}
-                <ul class="list-unstyled mb-0 small">
-                    {% for s in scoring.strengths %}
-                    <li><i class="bi bi-check text-success"></i> {{ s }}</li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-muted small mb-0">Aucun point fort identifié</p>
-                {% endif %}
+            <!-- Verdict + top forces/faiblesses -->
+            <div class="col ps-4">
+                <div style="font-size:14px;font-weight:600;margin-bottom:8px;
+                            color:{% if scoring.global_score >= 65 %}#22C55E{% elif scoring.global_score >= 45 %}#F59E0B{% else %}#EF4444{% endif %};">
+                    {{ scoring.global_label }}
+                    {% if scoring.strengths and scoring.weaknesses %}
+                    — <span style="color:var(--text-secondary);font-weight:400;font-size:13px;">
+                        {% if scoring.strengths.0 %}{{ scoring.strengths.0|lower }}{% endif %}
+                        {% if scoring.weaknesses.0 %}, mais {{ scoring.weaknesses.0|lower }}{% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        {% for s in scoring.strengths|slice:":3" %}
+                        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:3px;">
+                            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--success);margin-right:8px;vertical-align:middle;"></span>{{ s }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        {% for w in scoring.weaknesses|slice:":3" %}
+                        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:3px;">
+                            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--danger);margin-right:8px;vertical-align:middle;"></span>{{ w }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <h6 class="text-danger mb-2">
-                    <i class="bi bi-exclamation-triangle-fill"></i> Points faibles
-                </h6>
-                {% if scoring.weaknesses %}
-                <ul class="list-unstyled mb-0 small">
-                    {% for w in scoring.weaknesses %}
-                    <li><i class="bi bi-x text-danger"></i> {{ w }}</li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="text-muted small mb-0">Aucun point faible majeur</p>
-                {% endif %}
-            </div>
-        </div>
 
+        </div>
     </div>
 </div>
 {% endif %}
 
-<!-- Sélecteur de période -->
-<div class="d-flex justify-content-end mb-3">
-    <div class="btn-group btn-group-sm">
-        <a href="?tab={{ active_tab }}&period=5"
-           class="btn {% if period == 5 %}btn-primary{% else %}btn-outline-primary{% endif %}">
-            5 ans
-        </a>
-        <a href="?tab={{ active_tab }}&period=10"
-           class="btn {% if period == 10 %}btn-primary{% else %}btn-outline-primary{% endif %}">
-            10 ans
-        </a>
+<!-- Onglets JS -->
+<div class="mb-3" style="border-bottom:1px solid var(--border);">
+    <div class="d-flex gap-1" id="tabNav">
+        {% for tab_id, tab_name in tabs %}
+        <button class="tab-btn {% if forloop.first %}active{% endif %}"
+                onclick="switchTab('{{ tab_id }}')"
+                id="btn-{{ tab_id }}">
+            {{ tab_name }}
+        </button>
+        {% endfor %}
     </div>
 </div>
 
-<!-- Onglets -->
-<ul class="nav nav-tabs mb-4">
-    <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'profile' %}active{% endif %}"
-           href="?tab=profile&period={{ period }}">
-            <i class="bi bi-building"></i> Profil & Ratios
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'income' %}active{% endif %}"
-           href="?tab=income&period={{ period }}">
-            <i class="bi bi-file-earmark-text"></i> Compte de résultats
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'balance' %}active{% endif %}"
-           href="?tab=balance&period={{ period }}">
-            <i class="bi bi-bank"></i> Bilan
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link {% if active_tab == 'cashflow' %}active{% endif %}"
-           href="?tab=cashflow&period={{ period }}">
-            <i class="bi bi-cash-stack"></i> Cash Flow
-        </a>
-    </li>
-</ul>
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ONGLET PROFIL                                          -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-profile">
+    {% if profile.description %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                {% if profile.sector %}
+                <span class="badge" style="background:rgba(46,107,230,0.1);color:var(--accent);">
+                    {{ profile.sector }}
+                </span>
+                {% endif %}
+                {% if profile.industry %}
+                <span class="badge" style="background:rgba(0,0,0,0.06);color:var(--text-secondary);">
+                    {{ profile.industry }}
+                </span>
+                {% endif %}
+                {% if profile.country %}
+                <span style="font-size:12px;color:var(--text-muted);">
+                    {{ profile.country }}
+                </span>
+                {% endif %}
+                {% if profile.fullTimeEmployees %}
+                <span style="font-size:12px;color:var(--text-muted);">
+                    · {{ profile.fullTimeEmployees }} employés
+                </span>
+                {% endif %}
+            </div>
+            <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0;">
+                {{ profile.description|truncatewords:100 }}
+            </p>
+        </div>
+    </div>
+    {% endif %}
 
-<!-- ═══════════════════════════════════════════════ -->
-<!-- ONGLET PROFIL                                   -->
-<!-- ═══════════════════════════════════════════════ -->
-{% if active_tab == 'profile' %}
+    {% if chart_data %}
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="card-title">Revenus & Bénéfice net (Mrd $)</div>
+                    <canvas id="revenueChart" height="160"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="card-title">Free Cash Flow (Mrd $)</div>
+                    <canvas id="fcfChart" height="160"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="card-title">Évolution des marges (%)</div>
+            <canvas id="marginChart" height="80"></canvas>
+        </div>
+    </div>
+    {% endif %}
+</div>
 
-<div class="row mb-4">
-    <!-- 5 blocs de notation -->
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ONGLET RATIOS                                          -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-ratios" style="display:none;">
     <div class="row mb-4">
 
-        <!-- CROISSANCE -->
+        <!-- Croissance -->
         <div class="col-md mb-3">
-            <div class="card shadow-sm h-100">
+            <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-title mb-0">📈 Croissance</h6>
+                        <div class="card-title mb-0">Croissance</div>
                         <div class="score-circle" data-score="{{ scoring.categories.growth.score }}">
                             {{ scoring.categories.growth.score }}
                         </div>
@@ -174,8 +216,8 @@
                     {% with r=cat|get_item:ratio_key %}
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">{{ label }}</span>
-                            <span class="fw-bold">
+                            <span style="color:var(--text-muted);">{{ label }}</span>
+                            <span style="font-weight:500;">
                                 {% if r.value %}{{ r.value }}%{% else %}—{% endif %}
                             </span>
                         </div>
@@ -190,12 +232,12 @@
             </div>
         </div>
 
-        <!-- RENTABILITÉ -->
+        <!-- Rentabilité -->
         <div class="col-md mb-3">
-            <div class="card shadow-sm h-100">
+            <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-title mb-0">💰 Rentabilité</h6>
+                        <div class="card-title mb-0">Rentabilité</div>
                         <div class="score-circle" data-score="{{ scoring.categories.profitability.score }}">
                             {{ scoring.categories.profitability.score }}
                         </div>
@@ -205,8 +247,8 @@
                     {% with r=cat|get_item:ratio_key %}
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">{{ label }}</span>
-                            <span class="fw-bold">
+                            <span style="color:var(--text-muted);">{{ label }}</span>
+                            <span style="font-weight:500;">
                                 {% if r.value %}{{ r.value }}%{% else %}—{% endif %}
                             </span>
                         </div>
@@ -221,12 +263,12 @@
             </div>
         </div>
 
-        <!-- VALORISATION -->
+        <!-- Valorisation -->
         <div class="col-md mb-3">
-            <div class="card shadow-sm h-100">
+            <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-title mb-0">🏷️ Valorisation</h6>
+                        <div class="card-title mb-0">Valorisation</div>
                         <div class="score-circle" data-score="{{ scoring.categories.valuation.score }}">
                             {{ scoring.categories.valuation.score }}
                         </div>
@@ -236,9 +278,9 @@
                     {% with r=cat|get_item:ratio_key %}
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">{{ label }}</span>
-                            <span class="fw-bold">
-                                {% if r.value %}{{ r.value }}{% else %}—{% endif %}
+                            <span style="color:var(--text-muted);">{{ label }}</span>
+                            <span style="font-weight:500;">
+                                {% if r %}{{ r.value|default:"—" }}{% else %}{{ ratios|get_item:ratio_key|default:"—" }}{% endif %}
                             </span>
                         </div>
                         <div class="ratio-bar">
@@ -252,12 +294,12 @@
             </div>
         </div>
 
-        <!-- SÉCURITÉ -->
+        <!-- Sécurité -->
         <div class="col-md mb-3">
-            <div class="card shadow-sm h-100">
+            <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-title mb-0">🛡️ Sécurité</h6>
+                        <div class="card-title mb-0">Sécurité</div>
                         <div class="score-circle" data-score="{{ scoring.categories.safety.score }}">
                             {{ scoring.categories.safety.score }}
                         </div>
@@ -267,9 +309,9 @@
                     {% with r=cat|get_item:ratio_key %}
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">{{ label }}</span>
-                            <span class="fw-bold">
-                                {% if r.value %}{{ r.value }}{% else %}—{% endif %}
+                            <span style="color:var(--text-muted);">{{ label }}</span>
+                            <span style="font-weight:500;">
+                                {% if r %}{{ r.value|default:"—" }}{% else %}{{ ratios|get_item:ratio_key|default:"—" }}{% endif %}
                             </span>
                         </div>
                         <div class="ratio-bar">
@@ -283,611 +325,501 @@
             </div>
         </div>
 
-        <!-- QUALITÉ -->
+        <!-- Qualité -->
         <div class="col-md mb-3">
-            <div class="card shadow-sm h-100">
+            <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="card-title mb-0">⭐ Qualité</h6>
+                        <div class="card-title mb-0">Qualité</div>
                         <div class="score-circle" data-score="{{ scoring.categories.quality.score }}">
                             {{ scoring.categories.quality.score }}
                         </div>
                     </div>
-
-                    <!-- Indicateurs de base -->
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">Bénéfices positifs</span>
-                            <span class="fw-bold">{{ ratios.profitable_years }}/{{ ratios.total_years }} ans</span>
+                            <span style="color:var(--text-muted);">Bénéfices positifs</span>
+                            <span style="font-weight:500;">{{ ratios.profitable_years }}/{{ ratios.total_years }} ans</span>
                         </div>
                         <div class="ratio-bar">
                             <div class="ratio-bar-fill"
-                                data-score="{% widthratio ratios.profitable_years ratios.total_years 100 %}"
-                                style="width:0%"></div>
+                                 data-score="{% widthratio ratios.profitable_years ratios.total_years 100 %}"
+                                 style="width:0%"></div>
                         </div>
                     </div>
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">FCF positif</span>
-                            <span class="fw-bold">{{ ratios.positive_fcf_years }}/{{ ratios.total_years }} ans</span>
+                            <span style="color:var(--text-muted);">FCF positif</span>
+                            <span style="font-weight:500;">{{ ratios.positive_fcf_years }}/{{ ratios.total_years }} ans</span>
                         </div>
                         <div class="ratio-bar">
                             <div class="ratio-bar-fill"
-                                data-score="{% widthratio ratios.positive_fcf_years ratios.total_years 100 %}"
-                                style="width:0%"></div>
+                                 data-score="{% widthratio ratios.positive_fcf_years ratios.total_years 100 %}"
+                                 style="width:0%"></div>
                         </div>
                     </div>
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">Rachat d'actions</span>
-                            <span class="fw-bold">
-                                {% if ratios.shares_buyback %}✅ Oui{% elif ratios.shares_buyback == False %}❌ Non{% else %}—{% endif %}
+                            <span style="color:var(--text-muted);">Rachat d'actions</span>
+                            <span style="font-weight:500;">
+                                {% if ratios.shares_buyback %}✓ Oui{% elif ratios.shares_buyback == False %}✗ Non{% else %}—{% endif %}
                             </span>
                         </div>
                         <div class="ratio-bar">
                             <div class="ratio-bar-fill"
-                                data-score="{% if ratios.shares_buyback %}100{% else %}0{% endif %}"
-                                style="width:0%"></div>
+                                 data-score="{% if ratios.shares_buyback %}100{% else %}0{% endif %}"
+                                 style="width:0%"></div>
                         </div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-muted">Marges consistantes</span>
-                            <span class="fw-bold">
-                                {% if ratios.margin_consistency %}✅ Oui{% else %}❌ Non{% endif %}
+                            <span style="color:var(--text-muted);">Marges consistantes</span>
+                            <span style="font-weight:500;">
+                                {% if ratios.margin_consistency %}✓ Oui{% else %}✗ Non{% endif %}
                             </span>
                         </div>
                         <div class="ratio-bar">
                             <div class="ratio-bar-fill"
-                                data-score="{% if ratios.margin_consistency %}100{% else %}20{% endif %}"
-                                style="width:0%"></div>
+                                 data-score="{% if ratios.margin_consistency %}100{% else %}20{% endif %}"
+                                 style="width:0%"></div>
                         </div>
                     </div>
 
-                    <!-- Piotroski F-Score -->
                     {% if piotroski %}
-                    <div class="border-top pt-3">
+                    <div style="border-top:1px solid var(--border);padding-top:12px;">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="small fw-semibold">Piotroski F-Score</span>
-                            <span class="badge bg-{{ piotroski.color }} fs-6"
-                                id="piotroskiBadge"
-                                style="cursor:pointer;">
-                                {{ piotroski.emoji }} {{ piotroski.total }}/9
+                            <span style="font-size:12px;font-weight:600;">Piotroski F-Score</span>
+                            <span class="badge bg-{{ piotroski.color }}"
+                                  id="piotroskiBadge" style="cursor:pointer;font-size:12px;">
+                                {{ piotroski.total }}/9
                             </span>
                         </div>
-                        <div class="ratio-bar mb-2">
+                        <div class="ratio-bar mb-1">
                             <div class="ratio-bar-fill"
-                                data-score="{% widthratio piotroski.total 9 100 %}"
-                                style="width:0%"></div>
+                                 data-score="{% widthratio piotroski.total 9 100 %}"
+                                 style="width:0%"></div>
                         </div>
-                        <p class="small text-muted mb-0">{{ piotroski.label }}</p>
+                        <div style="font-size:11px;color:var(--text-muted);">{{ piotroski.label }}</div>
                     </div>
-
-                    <!-- Données encodées en JSON pour le JS -->
-                    <script id="piotroskiJson" type="application/json">
-                    {
-                        "total": {{ piotroski.total }},
-                        "groups": {
-                            {% for group_name, criteria_keys in piotroski.groups.items %}
-                            "{{ group_name }}": [
-                                {% for key in criteria_keys %}
-                                {% with c=piotroski.details|get_item:key %}
-                                {"label": "{{ c.label }}", "pass": {{ c.pass|yesno:"true,false" }}}{% if not forloop.last %},{% endif %}
-                                {% endwith %}
-                                {% endfor %}
-                            ]{% if not forloop.last %},{% endif %}
-                            {% endfor %}
-                        }
-                    }
-                    </script>
                     {% endif %}
 
-                    <!-- Beneish M-Score -->
                     {% if beneish %}
-                    <div class="border-top pt-3 mt-2">
+                    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="small fw-semibold">Beneish M-Score</span>
-                            <span class="badge bg-{{ beneish.color }} fs-6"
-                                id="beneishBadge"
-                                style="cursor:pointer;">
-                                {{ beneish.emoji }} {{ beneish.m_score }}
+                            <span style="font-size:12px;font-weight:600;">Beneish M-Score</span>
+                            <span class="badge bg-{{ beneish.color }}"
+                                  id="beneishBadge" style="cursor:pointer;font-size:12px;">
+                                {{ beneish.m_score }}
                             </span>
                         </div>
-                        <!-- Barre de progression -->
-                        <div class="ratio-bar mb-2">
+                        <div class="ratio-bar mb-1">
                             <div class="ratio-bar-fill"
-                                data-score="{% if beneish.color == 'success' %}85{% elif beneish.color == 'warning' %}45{% else %}10{% endif %}"
-                                style="width:0%"></div>
+                                 data-score="{% if beneish.color == 'success' %}85{% elif beneish.color == 'warning' %}45{% else %}10{% endif %}"
+                                 style="width:0%"></div>
                         </div>
-                        <p class="small text-muted mb-0">{{ beneish.label }}</p>
+                        <div style="font-size:11px;color:var(--text-muted);">{{ beneish.label }}</div>
                     </div>
-
-                    <script id="beneishJson" type="application/json">{{ beneish_json|safe }}</script>
                     {% endif %}
+
                     {% if altman %}
-                    <div class="border-top pt-3 mt-2">
+                    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="small fw-semibold">Altman Z-Score</span>
-                            <span class="badge bg-{{ altman.color }} fs-6"
-                                id="altmanBadge"
-                                style="cursor:pointer;">
-                                {{ altman.emoji }} {{ altman.score }}
+                            <span style="font-size:12px;font-weight:600;">Altman Z-Score</span>
+                            <span class="badge bg-{{ altman.color }}"
+                                  id="altmanBadge" style="cursor:pointer;font-size:12px;">
+                                {{ altman.score }}
                             </span>
                         </div>
-                        <div class="ratio-bar mb-2">
+                        <div class="ratio-bar mb-1">
                             <div class="ratio-bar-fill"
-                                data-score="{% if altman.color == 'success' %}85{% elif altman.color == 'warning' %}45{% else %}10{% endif %}"
-                                style="width:0%"></div>
+                                 data-score="{% if altman.color == 'success' %}85{% elif altman.color == 'warning' %}45{% else %}10{% endif %}"
+                                 style="width:0%"></div>
                         </div>
-                        <p class="small text-muted mb-0">{{ altman.label }} — {{ altman.version }}</p>
+                        <div style="font-size:11px;color:var(--text-muted);">{{ altman.label }}</div>
                     </div>
-
-                    <script id="altmanJson" type="application/json">{{ altman_json|safe }}</script>
                     {% endif %}
+
+                    <script id="piotroskiJson" type="application/json">{{ piotroski_json|safe }}</script>
+                    <script id="beneishJson" type="application/json">{{ beneish_json|safe }}</script>
+                    <script id="altmanJson" type="application/json">{{ altman_json|safe }}</script>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ONGLET COMPTE DE RÉSULTATS                             -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-income" style="display:none;">
+    {% if income_statements %}
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title">Compte de résultats — {{ period }} dernières années</div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Indicateur</th>
+                            {% if income_ttm %}<th class="text-end" style="color:#F5F0E8;background:#2E6BE6;">TTM</th>{% endif %}
+                            {% for s in income_statements %}<th class="text-end">{{ s.date|slice:":4" }}</th>{% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td style="color:var(--text-muted);">Revenus</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.revenue|floatformat:0 }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.revenue|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);">Bénéfice brut</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.grossProfit|floatformat:0 }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.grossProfit|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);">EBITDA</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.ebitda|floatformat:0 }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.ebitda|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);">Résultat opérationnel</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.operatingIncome|floatformat:0 }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.operatingIncome|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);">Résultat net</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.netIncome|floatformat:0 }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.netIncome|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr style="background:rgba(0,0,0,0.02);">
+                            <td style="color:var(--text-muted);">Marge brute</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{% if income_ttm.gross_margin %}{{ income_ttm.gross_margin }}%{% else %}—{% endif %}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{% if s.gross_margin %}{{ s.gross_margin }}%{% else %}—{% endif %}</td>{% endfor %}
+                        </tr>
+                        <tr style="background:rgba(0,0,0,0.02);">
+                            <td style="color:var(--text-muted);">Marge opérationnelle</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{% if income_ttm.operating_margin %}{{ income_ttm.operating_margin }}%{% else %}—{% endif %}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{% if s.operating_margin %}{{ s.operating_margin }}%{% else %}—{% endif %}</td>{% endfor %}
+                        </tr>
+                        <tr style="background:rgba(0,0,0,0.02);">
+                            <td style="color:var(--text-muted);">Marge nette</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{% if income_ttm.net_margin %}{{ income_ttm.net_margin }}%{% else %}—{% endif %}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{% if s.net_margin %}{{ s.net_margin }}%{% else %}—{% endif %}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);">BPA dilué</td>
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.epsdiluted|floatformat:2 }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.epsdiluted|floatformat:2 }}</td>{% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ONGLET BILAN                                           -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-balance" style="display:none;">
+    {% if balance_sheets %}
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title">Bilan — {{ period }} dernières années</div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Indicateur</th>
+                            {% if balance_ttm %}<th class="text-end" style="color:#F5F0E8;background:#2E6BE6;">TTM</th>{% endif %}
+                            {% for s in balance_sheets %}<th class="text-end">{{ s.date|slice:":4" }}</th>{% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="{% if balance_ttm %}{{ balance_sheets|length|add:2 }}{% else %}{{ balance_sheets|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Actif</td></tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Total Actif</td>
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalAssets|floatformat:0 }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalAssets|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Actif courant</td>
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalCurrentAssets|floatformat:0 }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalCurrentAssets|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Trésorerie</td>
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.cashAndCashEquivalents|floatformat:0 }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.cashAndCashEquivalents|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td colspan="{% if balance_ttm %}{{ balance_sheets|length|add:2 }}{% else %}{{ balance_sheets|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Passif</td></tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Total Passif</td>
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalLiabilities|floatformat:0 }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalLiabilities|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Dette totale</td>
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalDebt|floatformat:0 }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalDebt|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Dette long terme</td>
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.longTermDebt|floatformat:0 }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.longTermDebt|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td colspan="{% if balance_ttm %}{{ balance_sheets|length|add:2 }}{% else %}{{ balance_sheets|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Fonds propres</td></tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Fonds propres</td>
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalStockholdersEquity|floatformat:0 }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalStockholdersEquity|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ONGLET CASH FLOW                                       -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-cashflow" style="display:none;">
+    {% if cash_flows %}
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title">Cash Flow — {{ period }} dernières années</div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Indicateur</th>
+                            {% if cashflow_ttm %}<th class="text-end" style="color:#F5F0E8;background:#2E6BE6;">TTM</th>{% endif %}
+                            {% for s in cash_flows %}<th class="text-end">{{ s.date|slice:":4" }}</th>{% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="{% if cashflow_ttm %}{{ cash_flows|length|add:2 }}{% else %}{{ cash_flows|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Exploitation</td></tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Cash opérationnel</td>
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.operatingCashFlow|floatformat:0 }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end">{{ s.operatingCashFlow|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Capex</td>
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.capitalExpenditure|floatformat:0 }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end">{{ s.capitalExpenditure|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;font-weight:600;">Free Cash Flow</td>
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.freeCashFlow|floatformat:0 }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end fw-bold">{{ s.freeCashFlow|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td colspan="{% if cashflow_ttm %}{{ cash_flows|length|add:2 }}{% else %}{{ cash_flows|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Financement</td></tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Dividendes versés</td>
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.dividendsPaid|floatformat:0 }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end">{{ s.dividendsPaid|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                        <tr><td style="color:var(--text-muted);padding-left:20px;">Rachat d'actions</td>
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.commonStockRepurchased|floatformat:0 }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end">{{ s.commonStockRepurchased|floatformat:0 }}</td>{% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- ONGLET VALORISATION                                    -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-valuation" style="display:none;">
+    <!-- DCF Inversé -->
+    {% with rdcf=valuations.reverse_dcf %}
+    {% if rdcf.applicable %}
+    <div class="alert alert-info mb-4" style="font-size:13px;">
+        <strong>DCF Inversé :</strong> {{ rdcf.note }}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Paramètres -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="card-title">Paramètres de valorisation</div>
+            <form method="get" id="valForm">
+                <input type="hidden" name="period" value="{{ period }}">
+                <div class="row g-3">
+                    <div class="col-md">
+                        <label class="form-label">Croissance phase 1 (ans 1-5)
+                            <span style="color:var(--accent);" id="g1Val">{{ params.growth_rate_1 }}%</span>
+                        </label>
+                        <input type="range" class="form-range" name="g1" min="0" max="30" step="0.5"
+                               value="{{ params.growth_rate_1 }}"
+                               oninput="document.getElementById('g1Val').textContent=this.value+'%';document.getElementById('g1N').value=this.value">
+                        <input type="number" id="g1N" class="form-control form-control-sm mt-1"
+                               value="{{ params.growth_rate_1 }}" min="0" max="30" step="0.5"
+                               oninput="document.querySelector('[name=g1]').value=this.value;document.getElementById('g1Val').textContent=this.value+'%'">
+                    </div>
+                    <div class="col-md">
+                        <label class="form-label">Croissance phase 2 (ans 6-10)
+                            <span style="color:var(--accent);" id="g2Val">{{ params.growth_rate_2 }}%</span>
+                        </label>
+                        <input type="range" class="form-range" name="g2" min="0" max="20" step="0.5"
+                               value="{{ params.growth_rate_2 }}"
+                               oninput="document.getElementById('g2Val').textContent=this.value+'%';document.getElementById('g2N').value=this.value">
+                        <input type="number" id="g2N" class="form-control form-control-sm mt-1"
+                               value="{{ params.growth_rate_2 }}" min="0" max="20" step="0.5"
+                               oninput="document.querySelector('[name=g2]').value=this.value;document.getElementById('g2Val').textContent=this.value+'%'">
+                    </div>
+                    <div class="col-md">
+                        <label class="form-label">Croissance perpétuelle
+                            <span style="color:var(--accent);" id="gtVal">{{ params.terminal_growth }}%</span>
+                        </label>
+                        <input type="range" class="form-range" name="gt" min="0" max="5" step="0.5"
+                               value="{{ params.terminal_growth }}"
+                               oninput="document.getElementById('gtVal').textContent=this.value+'%';document.getElementById('gtN').value=this.value">
+                        <input type="number" id="gtN" class="form-control form-control-sm mt-1"
+                               value="{{ params.terminal_growth }}" min="0" max="5" step="0.5"
+                               oninput="document.querySelector('[name=gt]').value=this.value;document.getElementById('gtVal').textContent=this.value+'%'">
+                    </div>
+                    <div class="col-md">
+                        <label class="form-label">WACC
+                            <span style="color:var(--accent);" id="waccVal">{{ params.wacc }}%</span>
+                        </label>
+                        <input type="range" class="form-range" name="wacc" min="5" max="15" step="0.5"
+                               value="{{ params.wacc }}"
+                               oninput="document.getElementById('waccVal').textContent=this.value+'%';document.getElementById('waccN').value=this.value">
+                        <input type="number" id="waccN" class="form-control form-control-sm mt-1"
+                               value="{{ params.wacc }}" min="5" max="15" step="0.5"
+                               oninput="document.querySelector('[name=wacc]').value=this.value;document.getElementById('waccVal').textContent=this.value+'%'">
+                    </div>
+                    <div class="col-md">
+                        <label class="form-label">Taux Trésor (Buffett)
+                            <span style="color:var(--accent);" id="trVal">{{ params.treasury_rate }}%</span>
+                        </label>
+                        <input type="range" class="form-range" name="tr" min="2" max="8" step="0.5"
+                               value="{{ params.treasury_rate }}"
+                               oninput="document.getElementById('trVal').textContent=this.value+'%';document.getElementById('trN').value=this.value">
+                        <input type="number" id="trN" class="form-control form-control-sm mt-1"
+                               value="{{ params.treasury_rate }}" min="2" max="8" step="0.5"
+                               oninput="document.querySelector('[name=tr]').value=this.value;document.getElementById('trVal').textContent=this.value+'%'">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3" onclick="switchTab('valuation')">
+                    Recalculer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Résultats -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="card-title">Résultats par méthode</div>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Méthode</th>
+                            <th class="text-end">Valeur intrinsèque</th>
+                            <th class="text-end">MS 25%</th>
+                            <th class="text-end">MS 50%</th>
+                            <th class="text-end">Vs prix actuel</th>
+                            <th>Fiabilité</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, v in valuations.items %}
+                        {% if key != 'reverse_dcf' and key != 'consensus' %}
+                        <tr {% if not v.applicable %}style="opacity:0.5"{% endif %}>
+                            <td style="font-weight:500;">{{ v.name }}</td>
+                            <td class="text-end">
+                                {% if v.intrinsic %}<strong>${{ v.intrinsic }}</strong>
+                                {% else %}<span style="color:var(--text-muted);">N/A</span>{% endif %}
+                            </td>
+                            <td class="text-end">{% if v.ms25 %}${{ v.ms25 }}{% else %}—{% endif %}</td>
+                            <td class="text-end">{% if v.ms50 %}${{ v.ms50 }}{% else %}—{% endif %}</td>
+                            <td class="text-end">
+                                {% if v.intrinsic and quote.price %}
+                                    {% if v.intrinsic > quote.price %}
+                                        <span style="color:var(--success);font-weight:500;">Potentiel</span>
+                                    {% else %}
+                                        <span style="color:var(--danger);font-weight:500;">Surévalué</span>
+                                    {% endif %}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% for i in "1234" %}
+                                    {% if forloop.counter <= v.reliability_score %}
+                                        <span style="color:#F59E0B;">★</span>
+                                    {% else %}
+                                        <span style="color:var(--border);">★</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if valuations.consensus %}
+    {% with c=valuations.consensus %}
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title">Fourchette consensuelle</div>
+            <div class="row text-center">
+                <div class="col-3">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Bas</div>
+                    <div style="font-size:22px;font-weight:600;color:var(--danger);">${{ c.low }}</div>
+                </div>
+                <div class="col-3">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Médiane</div>
+                    <div style="font-size:22px;font-weight:600;color:var(--warning);">${{ c.median }}</div>
+                </div>
+                <div class="col-3">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Haut</div>
+                    <div style="font-size:22px;font-weight:600;color:var(--success);">${{ c.high }}</div>
+                </div>
+                <div class="col-3">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Prix actuel</div>
+                    <div style="font-size:22px;font-weight:600;color:var(--accent);">${{ c.current }}</div>
                 </div>
             </div>
         </div>
     </div>
-
-<!-- Graphiques -->
-{% if chart_data %}
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h6 class="card-title">Revenus & Bénéfice net (Mrd $)</h6>
-                <canvas id="revenueChart" height="140"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h6 class="card-title">Free Cash Flow (Mrd $)</h6>
-                <canvas id="fcfChart" height="140"></canvas>
-            </div>
-        </div>
-    </div>
+    {% endwith %}
+    {% endif %}
 </div>
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h6 class="card-title">Évolution des marges (%)</h6>
-                <canvas id="marginChart" height="80"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Description -->
-{% if profile.description %}
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <h5 class="card-title">À propos</h5>
-        <p class="mb-1">
-            <span class="badge bg-primary">{{ profile.sector }}</span>
-            <span class="badge bg-secondary ms-1">{{ profile.industry }}</span>
-            <span class="ms-2 text-muted"><i class="bi bi-geo-alt"></i> {{ profile.country }}</span>
-            {% if profile.fullTimeEmployees %}
-            <span class="ms-2 text-muted">
-                <i class="bi bi-people"></i> {{ profile.fullTimeEmployees }} employés
-            </span>
-            {% endif %}
-        </p>
-        <p class="mt-2 text-muted">{{ profile.description|truncatewords:100 }}</p>
-    </div>
-</div>
-{% endif %}
-
-<!-- ═══════════════════════════════════════════════ -->
-<!-- ONGLET COMPTE DE RÉSULTATS                      -->
-<!-- ═══════════════════════════════════════════════ -->
-{% elif active_tab == 'income' %}
-{% if income_statements %}
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h5 class="card-title mb-3">Compte de résultats — {{ period }} dernières années</h5>
-        <div class="table-responsive">
-            <table class="table table-hover table-sm align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Indicateur</th>
-                        {% if income_ttm %}
-                        <th class="text-end table-warning">TTM</th>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <th class="text-end">{{ s.date|slice:":4" }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="text-muted">Revenus</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ income_ttm.revenue|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{{ s.revenue|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted">Bénéfice brut</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ income_ttm.grossProfit|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{{ s.grossProfit|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted">EBITDA</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ income_ttm.ebitda|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{{ s.ebitda|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted">Résultat opérationnel</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ income_ttm.operatingIncome|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{{ s.operatingIncome|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted">Résultat net</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ income_ttm.netIncome|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{{ s.netIncome|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr class="table-light">
-                        <td class="text-muted">Marge brute</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{% if income_ttm.gross_margin %}{{ income_ttm.gross_margin }}%{% else %}—{% endif %}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{% if s.gross_margin %}{{ s.gross_margin }}%{% else %}—{% endif %}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr class="table-light">
-                        <td class="text-muted">Marge opérationnelle</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{% if income_ttm.operating_margin %}{{ income_ttm.operating_margin }}%{% else %}—{% endif %}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{% if s.operating_margin %}{{ s.operating_margin }}%{% else %}—{% endif %}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr class="table-light">
-                        <td class="text-muted">Marge nette</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{% if income_ttm.net_margin %}{{ income_ttm.net_margin }}%{% else %}—{% endif %}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{% if s.net_margin %}{{ s.net_margin }}%{% else %}—{% endif %}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr class="table-light">
-                        <td class="text-muted">Marge EBITDA</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{% if income_ttm.ebitda_margin %}{{ income_ttm.ebitda_margin }}%{% else %}—{% endif %}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{% if s.ebitda_margin %}{{ s.ebitda_margin }}%{% else %}—{% endif %}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted">BPA</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ income_ttm.eps|floatformat:2 }}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{{ s.eps|floatformat:2 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted">BPA dilué</td>
-                        {% if income_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ income_ttm.epsdiluted|floatformat:2 }}</td>
-                        {% endif %}
-                        {% for s in income_statements %}
-                        <td class="text-end">{{ s.epsdiluted|floatformat:2 }}</td>
-                        {% endfor %}
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% else %}
-<div class="alert alert-warning">Données non disponibles pour {{ symbol }}.</div>
-{% endif %}
-
-<!-- ═══════════════════════════════════════════════ -->
-<!-- ONGLET BILAN                                    -->
-<!-- ═══════════════════════════════════════════════ -->
-{% elif active_tab == 'balance' %}
-{% if balance_sheets %}
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h5 class="card-title mb-3">Bilan comptable — {{ period }} dernières années</h5>
-        <div class="table-responsive">
-            <table class="table table-hover table-sm align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Indicateur</th>
-                        {% if balance_ttm %}
-                        <th class="text-end table-warning">TTM</th>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <th class="text-end">{{ s.date|slice:":4" }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="fw-semibold">
-                        <td>ACTIF</td>
-                        {% for s in balance_sheets %}<td></td>{% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Total Actif</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalAssets|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.totalAssets|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Actif courant</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalCurrentAssets|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.totalCurrentAssets|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Trésorerie</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.cashAndCashEquivalents|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.cashAndCashEquivalents|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Stocks</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.inventory|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.inventory|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr class="fw-semibold">
-                        <td>PASSIF</td>
-                        {% for s in balance_sheets %}<td></td>{% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Total Passif</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalLiabilities|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.totalLiabilities|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Dette totale</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalDebt|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.totalDebt|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Dette long terme</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.longTermDebt|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.longTermDebt|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Dette court terme</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.shortTermDebt|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.shortTermDebt|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr class="fw-semibold">
-                        <td>FONDS PROPRES</td>
-                        {% for s in balance_sheets %}<td></td>{% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Fonds propres</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.totalStockholdersEquity|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.totalStockholdersEquity|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Actions en circulation</td>
-                        {% if balance_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ balance_ttm.commonStock|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in balance_sheets %}
-                        <td class="text-end">{{ s.commonStock|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% else %}
-<div class="alert alert-warning">Données non disponibles pour {{ symbol }}.</div>
-{% endif %}
-
-<!-- ═══════════════════════════════════════════════ -->
-<!-- ONGLET CASH FLOW                                -->
-<!-- ═══════════════════════════════════════════════ -->
-{% elif active_tab == 'cashflow' %}
-{% if cash_flows %}
-<div class="card shadow-sm">
-    <div class="card-body">
-        <h5 class="card-title mb-3">Flux de trésorerie — {{ period }} dernières années</h5>
-        <div class="table-responsive">
-            <table class="table table-hover table-sm align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Indicateur</th>
-                        {% if cashflow_ttm %}
-                        <th class="text-end table-warning">TTM</th>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <th class="text-end">{{ s.date|slice:":4" }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="fw-semibold">
-                        <td>EXPLOITATION</td>
-                        {% for s in cash_flows %}<td></td>{% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Cash opérationnel</td>
-                        {% if cashflow_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.operatingCashFlow|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <td class="text-end">{{ s.operatingCashFlow|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Dépréciations & Amort.</td>
-                        {% if cashflow_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.depreciationAndAmortization|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <td class="text-end">{{ s.depreciationAndAmortization|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr class="fw-semibold">
-                        <td>INVESTISSEMENT</td>
-                        {% for s in cash_flows %}<td></td>{% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Capex</td>
-                        {% if cashflow_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.capitalExpenditure|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <td class="text-end">{{ s.capitalExpenditure|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Free Cash Flow</td>
-                        {% if cashflow_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.freeCashFlow|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <td class="text-end fw-bold">{{ s.freeCashFlow|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Cash investissement total</td>
-                        {% if cashflow_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.netCashUsedForInvestingActivites|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <td class="text-end">{{ s.netCashUsedForInvestingActivites|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr class="fw-semibold">
-                        <td>FINANCEMENT</td>
-                        {% for s in cash_flows %}<td></td>{% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Cash financement total</td>
-                        {% if cashflow_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.netCashUsedProvidedByFinancingActivities|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <td class="text-end">{{ s.netCashUsedProvidedByFinancingActivities|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Dividendes versés</td>
-                        {% if cashflow_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.dividendsPaid|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <td class="text-end">{{ s.dividendsPaid|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td class="text-muted ps-3">Rachat d'actions</td>
-                        {% if cashflow_ttm %}
-                        <td class="text-end table-warning fw-bold">{{ cashflow_ttm.commonStockRepurchased|floatformat:0 }}</td>
-                        {% endif %}
-                        {% for s in cash_flows %}
-                        <td class="text-end">{{ s.commonStockRepurchased|floatformat:0 }}</td>
-                        {% endfor %}
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% else %}
-<div class="alert alert-warning">Données non disponibles pour {{ symbol }}.</div>
-{% endif %}
-{% endif %}
 
 <a href="{% url 'search' %}" class="btn btn-outline-secondary mt-3">
-    <i class="bi bi-arrow-left"></i> Retour à la recherche
+    ← Retour à la recherche
 </a>
 
 {% endblock %}
 
 {% block scripts %}
-{% if chart_data and active_tab == 'profile' %}
 <script>
-const years = {{ chart_data.years|safe }};
-const revenues = {{ chart_data.revenues|safe }};
-const netIncomes = {{ chart_data.net_incomes|safe }};
-const grossMargins = {{ chart_data.gross_margins|safe }};
-const netMargins = {{ chart_data.net_margins|safe }};
-const operatingMargins = {{ chart_data.operating_margins|safe }};
-const fcf = {{ chart_data.fcf|safe }};
 
+// Cercle de progression score global
+const scorePath = document.getElementById('scoreCirclePath');
+if (scorePath) {
+    const score = {{ scoring.global_score }};
+    const circumference = 2 * Math.PI * 38;
+    const offset = circumference - (score / 100) * circumference;
+    scorePath.style.strokeDasharray = `${circumference}`;
+    scorePath.style.strokeDashoffset = `${offset}`;
+    scorePath.style.transition = 'stroke-dashoffset 1s ease';
+}
+
+// ── ONGLETS JS ────────────────────────────────────────────
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab-' + tabId).style.display = 'block';
+    document.getElementById('btn-' + tabId).classList.add('active');
+    if (tabId === 'profile' || tabId === 'ratios') renderBars();
+}
+
+// ── BARRES DÉGRADÉES ──────────────────────────────────────
 function scoreToColor(score) {
     if (score === null || score === undefined) return '#adb5bd';
     const s = Math.max(0, Math.min(100, score));
     let r, g;
-    if (s < 50) {
-        r = 220;
-        g = Math.round(s * 2 * 166 / 100);
-    } else {
-        r = Math.round(220 - (s - 50) * 2 * 220 / 100);
-        g = 166;
-    }
+    if (s < 50) { r = 220; g = Math.round(s * 2 * 166 / 100); }
+    else { r = Math.round(220 - (s - 50) * 2 * 220 / 100); g = 166; }
     return `rgb(${r}, ${g}, 50)`;
 }
 
@@ -909,155 +841,99 @@ if (document.readyState === 'loading') {
     renderBars();
 }
 
-// Popover Piotroski
-const piotroskiEl = document.getElementById('piotroskiJson');
-const piotroskiBadge = document.getElementById('piotroskiBadge');
-
-if (piotroskiEl && piotroskiBadge) {
-    const data = JSON.parse(piotroskiEl.textContent);
-    
-    let content = '<div style="font-size:0.8rem;">';
-    for (const [group, criteria] of Object.entries(data.groups)) {
-        content += `<div class="fw-semibold mt-2 mb-1">${group}</div>`;
-        criteria.forEach(c => {
-            content += `<div>${c.pass ? '✅' : '❌'} ${c.label}</div>`;
+// ── POPOVERS ──────────────────────────────────────────────
+function initPopover(badgeId, jsonId, titleFn, contentFn) {
+    const badge = document.getElementById(badgeId);
+    const jsonEl = document.getElementById(jsonId);
+    if (!badge || !jsonEl) return;
+    try {
+        const data = JSON.parse(jsonEl.textContent);
+        if (!data) return;
+        new bootstrap.Popover(badge, {
+            trigger: 'hover focus',
+            placement: 'left',
+            html: true,
+            sanitize: false,
+            title: titleFn(data),
+            content: contentFn(data)
         });
-    }
-    content += '</div>';
-
-    new bootstrap.Popover(piotroskiBadge, {
-        trigger: 'hover focus',
-        placement: 'left',
-        html: true,
-        sanitize: false,
-        title: `Piotroski F-Score ${data.total}/9`,
-        content: content
-    });
+    } catch(e) {}
 }
 
-// Popover Beneish
-const beneishEl = document.getElementById('beneishJson');
-const beneishBadge = document.getElementById('beneishBadge');
-
-if (beneishEl && beneishBadge) {
-    const data = JSON.parse(beneishEl.textContent);
-
-    let content = `<div style="font-size:0.8rem;">`;
-    content += `<div class="mb-2 text-muted">Seuil : &gt; -1.78 = manipulation probable</div>`;
-    content += `<div class="mb-2"><strong>${data.warnings} alerte(s) détectée(s)</strong></div>`;
-
-    for (const [key, d] of Object.entries(data.details)) {
-        const icon = d.warning ? '⚠️' : '✅';
-        content += `<div class="mb-1">${icon} <strong>${key}</strong> = ${d.value ?? '—'} — ${d.label}</div>`;
+initPopover('piotroskiBadge', 'piotroskiJson',
+    d => `Piotroski F-Score ${d.total}/9`,
+    d => {
+        let c = '<div style="font-size:0.8rem;">';
+        for (const [group, criteria] of Object.entries(d.groups)) {
+            c += `<div class="fw-semibold mt-2 mb-1">${group}</div>`;
+            criteria.forEach(cr => { c += `<div>${cr.pass ? '✅' : '❌'} ${cr.label}</div>`; });
+        }
+        return c + '</div>';
     }
-    content += `</div>`;
+);
 
-    new bootstrap.Popover(beneishBadge, {
-        trigger: 'hover focus',
-        placement: 'left',
-        html: true,
-        sanitize: false,
-        title: `Beneish M-Score : ${data.m_score}`,
-        content: content
-    });
-}
-
-// Popover Altman
-const altmanEl = document.getElementById('altmanJson');
-const altmanBadge = document.getElementById('altmanBadge');
-
-if (altmanEl && altmanBadge) {
-    const data = JSON.parse(altmanEl.textContent);
-
-    let content = `<div style="font-size:0.8rem;">`;
-    content += `<div class="mb-2 text-muted">`;
-    content += `Zone sûre : &gt; ${data.z_original ? '2.99' : '2.60'} | `;
-    content += `Zone grise : ${data.z_original ? '1.81–2.99' : '1.10–2.60'} | `;
-    content += `Détresse : &lt; ${data.z_original ? '1.81' : '1.10'}`;
-    content += `</div>`;
-
-    if (data.z_original !== null) {
-        content += `<div class="mb-1"><strong>Z original :</strong> ${data.z_original}</div>`;
+initPopover('beneishBadge', 'beneishJson',
+    d => `Beneish M-Score : ${d.m_score}`,
+    d => {
+        let c = `<div style="font-size:0.8rem;"><div class="mb-2 text-muted">Seuil : &gt; -1.78 = manipulation probable</div>`;
+        c += `<div class="mb-2"><strong>${d.warnings} alerte(s)</strong></div>`;
+        for (const [key, det] of Object.entries(d.details)) {
+            c += `<div class="mb-1">${det.warning ? '⚠️' : '✅'} <strong>${key}</strong> = ${det.value ?? '—'}</div>`;
+        }
+        return c + '</div>';
     }
-    if (data.z_prime !== null) {
-        content += `<div class="mb-2"><strong>Z' non-manuf. :</strong> ${data.z_prime}</div>`;
-    }
+);
 
-    content += `<div class="fw-semibold mb-1">Composantes :</div>`;
-    for (const [key, d] of Object.entries(data.details)) {
-        content += `<div class="mb-1"><strong>${key}</strong> = ${d.value ?? '—'} — ${d.interpretation}</div>`;
+initPopover('altmanBadge', 'altmanJson',
+    d => `Altman Z-Score : ${d.score} — ${d.label}`,
+    d => {
+        let c = `<div style="font-size:0.8rem;">`;
+        if (d.z_original !== null) c += `<div class="mb-1"><strong>Z original :</strong> ${d.z_original}</div>`;
+        if (d.z_prime !== null) c += `<div class="mb-2"><strong>Z' non-manuf. :</strong> ${d.z_prime}</div>`;
+        c += `<div class="fw-semibold mb-1">Composantes :</div>`;
+        for (const [key, det] of Object.entries(d.details)) {
+            c += `<div class="mb-1"><strong>${key}</strong> = ${det.value ?? '—'} — ${det.interpretation}</div>`;
+        }
+        return c + '</div>';
     }
-    content += `</div>`;
+);
 
-    new bootstrap.Popover(altmanBadge, {
-        trigger: 'hover focus',
-        placement: 'left',
-        html: true,
-        sanitize: false,
-        title: `Altman Z-Score : ${data.score} — ${data.label}`,
-        content: content
-    });
-}
+// ── GRAPHIQUES ────────────────────────────────────────────
+{% if chart_data %}
+const years = {{ chart_data.years|safe }};
+const revenues = {{ chart_data.revenues|safe }};
+const netIncomes = {{ chart_data.net_incomes|safe }};
+const grossMargins = {{ chart_data.gross_margins|safe }};
+const netMargins = {{ chart_data.net_margins|safe }};
+const operatingMargins = {{ chart_data.operating_margins|safe }};
+const fcf = {{ chart_data.fcf|safe }};
 
 new Chart(document.getElementById('revenueChart'), {
     type: 'bar',
-    data: {
-        labels: years,
-        datasets: [
-            { label: 'Revenus', data: revenues, backgroundColor: '#4e73df', borderRadius: 4 },
-            { label: 'Bénéfice net', data: netIncomes, backgroundColor: '#1cc88a', borderRadius: 4 }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { position: 'top' } },
-        scales: { y: { beginAtZero: true } }
-    }
+    data: { labels: years, datasets: [
+        { label: 'Revenus', data: revenues, backgroundColor: 'rgba(27,42,74,0.85)', borderRadius: 4 },
+        { label: 'Bénéfice net', data: netIncomes, backgroundColor: '#6B8F71', borderRadius: 4 }
+    ]},
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true } } }
 });
 
 new Chart(document.getElementById('fcfChart'), {
     type: 'bar',
-    data: {
-        labels: years,
-        datasets: [
-            { label: 'Free Cash Flow', data: fcf, backgroundColor: '#f6c23e', borderRadius: 4 }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { position: 'top' } },
-        scales: { y: { beginAtZero: false } }
-    }
+    data: { labels: years, datasets: [
+        { label: 'Free Cash Flow', data: fcf, backgroundColor: '#C4A882', borderRadius: 4 }
+    ]},
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false } } }
 });
 
 new Chart(document.getElementById('marginChart'), {
     type: 'line',
-    data: {
-        labels: years,
-        datasets: [
-            {
-                label: 'Marge brute %', data: grossMargins,
-                borderColor: '#4e73df', backgroundColor: 'rgba(78,115,223,0.1)',
-                tension: 0.3, fill: true
-            },
-            {
-                label: 'Marge opérationnelle %', data: operatingMargins,
-                borderColor: '#f6c23e', backgroundColor: 'rgba(246,194,62,0.1)',
-                tension: 0.3, fill: true
-            },
-            {
-                label: 'Marge nette %', data: netMargins,
-                borderColor: '#1cc88a', backgroundColor: 'rgba(28,200,138,0.1)',
-                tension: 0.3, fill: true
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        plugins: { legend: { position: 'top' } },
-        scales: { y: { beginAtZero: false } }
-    }
+    data: { labels: years, datasets: [
+        { label: 'Marge brute %', data: grossMargins, borderColor: 'rgba(27,42,74,0.85)', backgroundColor: 'rgba(27,42,74,0.06)', tension: 0.3, fill: true },
+        { label: 'Marge opé. %', data: operatingMargins, borderColor: '#C4A882', backgroundColor: 'rgba(196,168,130,0.06)', tension: 0.3, fill: true },
+        { label: 'Marge nette %', data: netMargins, borderColor: '#6B8F71', backgroundColor: 'rgba(107,143,113,0.06)', tension: 0.3, fill: true }
+    ]},
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false } } }
 });
-</script>
 {% endif %}
+</script>
 {% endblock %}

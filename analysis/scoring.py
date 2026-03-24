@@ -293,12 +293,23 @@ def calculate_score(ratios, piotroski=None, beneish=None, altman=None):    # ─
     )
 
     def label_color(score):
-        if score >= 80: return '🟢 Excellent', 'success'
-        if score >= 65: return '🔵 Bon', 'primary'
-        if score >= 50: return '🟡 Correct', 'warning'
-        return '🔴 Faible', 'danger'
+        if score >= 80: return 'Excellent', 'success'
+        if score >= 65: return 'Bon', 'primary'
+        if score >= 50: return 'Correct', 'warning'
+        return 'Faible', 'danger'
 
-    global_label, global_color = label_color(global_score)
+    if global_score >= 80:
+        global_label = 'Excellente qualité'
+        global_color = 'success'
+    elif global_score >= 65:
+        global_label = 'Bonne qualité'
+        global_color = 'primary'
+    elif global_score >= 50:
+        global_label = 'Qualité correcte'
+        global_color = 'warning'
+    else:
+        global_label = 'Qualité faible'
+        global_color = 'danger'
 
     # Points forts et faibles
     strengths, weaknesses = [], []

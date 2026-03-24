@@ -4,22 +4,20 @@
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>🌍 Marchés financiers</h2>
-    <span class="text-muted small">Données mises à jour toutes les 5 minutes</span>
+    <h2 class="page-title">Marchés financiers</h2>
+    <span class="text-muted small">Données mises à jour toutes les 12h</span>
 </div>
 
 <!-- Indices -->
 <div class="row mb-4">
     {% for idx in indices %}
     <div class="col-md-3 col-6 mb-3">
-        <div class="card shadow-sm h-100">
-            <div class="card-body py-3">
-                <div class="text-muted small">{{ idx.display_name }}</div>
-                <div class="fs-5 fw-bold">{{ idx.price|floatformat:2 }}</div>
-                <div class="{% if idx.changesPercentage >= 0 %}text-success{% else %}text-danger{% endif %} small">
-                    {% if idx.changesPercentage >= 0 %}▲{% else %}▼{% endif %}
-                    {{ idx.changesPercentage|floatformat:2 }}%
-                </div>
+        <div class="metric-card">
+            <div class="metric-label">{{ idx.display_name }}</div>
+            <div class="metric-value">{{ idx.price|floatformat:2 }}</div>
+            <div class="metric-sub {% if idx.changePercentage >= 0 %}text-success{% else %}text-danger{% endif %}">
+                {% if idx.changePercentage >= 0 %}▲{% else %}▼{% endif %}
+                {{ idx.changePercentage|floatformat:2 }}%
             </div>
         </div>
     </div>
@@ -37,8 +35,8 @@
     <div class="col-md-4 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5 class="card-title text-success mb-3">
-                    <i class="bi bi-graph-up-arrow"></i> Top Hausses
+                <h5 class="card-title mb-3" style="color: var(--success);">
+                    Top Hausses
                 </h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover">
@@ -78,8 +76,8 @@
     <div class="col-md-4 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5 class="card-title text-danger mb-3">
-                    <i class="bi bi-graph-down-arrow"></i> Top Baisses
+                <h5 class="card-title mb-3" style="color: var(--danger);">
+                    Top Baisses
                 </h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover">
@@ -119,8 +117,8 @@
     <div class="col-md-4 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5 class="card-title text-primary mb-3">
-                    <i class="bi bi-activity"></i> Plus Actives
+                <h5 class="card-title mb-3" style="color: var(--navy);">
+                    Plus Actives
                 </h5>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover">

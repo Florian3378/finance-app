@@ -85,15 +85,26 @@ def search_view(request):
     })
 
 
+from .valuation import calculate_all_valuations, SECTOR_PER
+import json as json_module
+
 @login_required
 def company_view(request, symbol):
     symbol = symbol.upper()
-    active_tab = request.GET.get('tab', 'profile')
     period = int(request.GET.get('period', 5))
     if period not in [5, 10]:
         period = 5
 
-    # ── UN SEUL BLOC D'APPELS API (tout mis en cache) ────────
+    # Paramètres valorisation
+    params = {
+        'growth_rate_1': float(request.GET.get('g1', 5.0)),
+        'growth_rate_2': float(request.GET.get('g2', 3.0)),
+        'terminal_growth': float(request.GET.get('gt', 3.0)),
+        'wacc': float(request.GET.get('wacc', 9.0)),
+        'treasury_rate': float(request.GET.get('tr', 4.5)),
+    }
+
+    # ── DONNÉES API ───────────────────────────────────────────
     profile = get_company_profile(symbol) or {}
     quote = get_quote(symbol) or {}
     income_statements = get_income_statement(symbol, limit=period)
@@ -106,58 +117,39 @@ def company_view(request, symbol):
     income_ttm, cashflow_ttm, balance_ttm = compute_ttm(
         quarterly_income, quarterly_cashflow, quarterly_balance
     )
+    income_ttm_enriched = enrich_income_statements([income_ttm])[0] if income_ttm else {}
 
-    # ── CALCUL LOCAL DES RATIOS ───────────────────────────────
+    # ── CALCULS ───────────────────────────────────────────────
     ratios = calculate_ratios(
-        profile, quote,
-        income_statements, balance_sheets, cash_flows,
-        income_ttm, cashflow_ttm, balance_ttm,
+        profile, quote, income_statements, balance_sheets, cash_flows,
+        income_ttm, cashflow_ttm, balance_ttm
     )
-    
-    # ── CALCUL PIOTROSKI/BENEISH/ALTMAN ───────────────────────────────
     piotroski = calculate_piotroski(
-    income_statements, balance_sheets, cash_flows,
-    income_ttm, cashflow_ttm, balance_ttm
+        income_statements, balance_sheets, cash_flows,
+        income_ttm, cashflow_ttm, balance_ttm
     )
     beneish = calculate_beneish(income_statements, balance_sheets, cash_flows)
-    beneish_json = json.dumps({
-        'm_score': beneish['m_score'] if beneish else None,
-        'label': beneish['label'] if beneish else '',
-        'warnings': beneish['warnings'] if beneish else 0,
-        'details': {
-            k: {
-                'value': v['value'],
-                'label': v['label'],
-                'interpretation': v['interpretation'],
-                'warning': bool(v['warning']),
-            }
-            for k, v in beneish['details'].items()
-        } if beneish else {}
-    }) if beneish else 'null'
     altman = calculate_altman(
-        profile, quote,
-        income_statements, balance_sheets,
+        profile, quote, income_statements, balance_sheets,
         income_ttm, balance_ttm
     )
-    altman_json = json_module.dumps({
-        'score': altman['score'] if altman else None,
-        'version': altman['version'] if altman else '',
-        'label': altman['label'] if altman else '',
-        'z_original': altman['z_original'] if altman else None,
-        'z_prime': altman['z_prime'] if altman else None,
-        'details': {
-            k: {
-                'label': v['label'],
-                'value': v['value'],
-                'interpretation': v['interpretation'],
-            }
-            for k, v in altman['details'].items()
-        } if altman else {}
-    }) if altman else 'null'
-
     scoring = calculate_score(ratios, piotroski, beneish, altman)
 
-    # ── DONNÉES GRAPHIQUES ────────────────────────────────────
+    # ── VALORISATION ──────────────────────────────────────────
+    # Taux de croissance par défaut basé sur CAGR historique
+    default_growth = ratios.get('fcf_cagr') or ratios.get('revenue_cagr') or 5.0
+    default_growth = min(max(default_growth, 0), 30)
+    params['growth_rate_1'] = float(request.GET.get('g1', round(default_growth, 1)))
+    params['growth_rate_2'] = float(request.GET.get('g2', round(default_growth * 0.6, 1)))
+
+    valuations = calculate_all_valuations(
+        profile, quote, ratios,
+        income_statements, balance_sheets, cash_flows,
+        income_ttm, balance_ttm, cashflow_ttm,
+        params
+    )
+
+    # ── GRAPHIQUES ────────────────────────────────────────────
     chart_data = {}
     if income_statements:
         rev_data = list(reversed(income_statements))
@@ -167,37 +159,70 @@ def company_view(request, symbol):
             'net_incomes': json.dumps([round((s.get('netIncome') or 0) / 1e9, 2) for s in rev_data]),
             'gross_margins': json.dumps([
                 round(s.get('grossProfit', 0) / s.get('revenue', 1) * 100, 2)
-                if s.get('revenue') else 0
-                for s in rev_data
+                if s.get('revenue') else 0 for s in rev_data
             ]),
             'net_margins': json.dumps([
                 round(s.get('netIncome', 0) / s.get('revenue', 1) * 100, 2)
-                if s.get('revenue') else 0
-                for s in rev_data
+                if s.get('revenue') else 0 for s in rev_data
             ]),
             'operating_margins': json.dumps([
                 round(s.get('operatingIncome', 0) / s.get('revenue', 1) * 100, 2)
-                if s.get('revenue') else 0
-                for s in rev_data
+                if s.get('revenue') else 0 for s in rev_data
             ]),
-            'fcf': json.dumps([round((cf.get('freeCashFlow') or 0) / 1e9, 2) for cf in list(reversed(cash_flows))]) if cash_flows else json.dumps([]),
+            'fcf': json.dumps([round((cf.get('freeCashFlow') or 0) / 1e9, 2)
+                            for cf in list(reversed(cash_flows))]) if cash_flows else json.dumps([]),
         }
 
-    # Enrichit le TTM avec les marges calculées
-    income_ttm_enriched = enrich_income_statements([income_ttm])[0] if income_ttm else {}
+    # ── JSON POUR POPOVERS ────────────────────────────────────
+    piotroski_json = json_module.dumps({
+        'total': piotroski['total'] if piotroski else 0,
+        'groups': {
+            k: [{'label': piotroski['details'][key]['label'],
+                'pass': bool(piotroski['details'][key]['pass'])}
+                for key in keys]
+            for k, keys in (piotroski['groups'].items() if piotroski else {}.items())
+        }
+    }) if piotroski else 'null'
 
-    is_favorite = Favorite.objects.filter(
-        user=request.user, symbol=symbol
-    ).exists()
+    beneish_json = json_module.dumps({
+        'm_score': beneish['m_score'] if beneish else None,
+        'label': beneish['label'] if beneish else '',
+        'warnings': beneish['warnings'] if beneish else 0,
+        'details': {
+            k: {'value': v['value'], 'label': v['label'],
+                'interpretation': v['interpretation'], 'warning': bool(v['warning'])}
+            for k, v in beneish['details'].items()
+        } if beneish else {}
+    }) if beneish else 'null'
+
+    altman_json = json_module.dumps({
+        'score': altman['score'] if altman else None,
+        'version': altman['version'] if altman else '',
+        'label': altman['label'] if altman else '',
+        'z_original': altman['z_original'] if altman else None,
+        'z_prime': altman['z_prime'] if altman else None,
+        'details': {
+            k: {'label': v['label'], 'value': v['value'],
+                'interpretation': v['interpretation']}
+            for k, v in altman['details'].items()
+        } if altman else {}
+    }) if altman else 'null'
+
+    is_favorite = Favorite.objects.filter(user=request.user, symbol=symbol).exists()
 
     context = {
         'profile': profile,
         'quote': quote,
         'symbol': symbol,
-        'active_tab': active_tab,
         'period': period,
         'ratios': ratios,
         'scoring': scoring,
+        'piotroski': piotroski,
+        'beneish': beneish,
+        'altman': altman,
+        'piotroski_json': piotroski_json,
+        'beneish_json': beneish_json,
+        'altman_json': altman_json,
         'income_statements': income_statements,
         'balance_sheets': balance_sheets,
         'cash_flows': cash_flows,
@@ -205,6 +230,10 @@ def company_view(request, symbol):
         'balance_ttm': balance_ttm,
         'cashflow_ttm': cashflow_ttm,
         'chart_data': chart_data,
+        'is_favorite': is_favorite,
+        'valuations': valuations,
+        'params': params,
+        'default_growth': default_growth,
         'categories_display': [
             ('growth', 'Croissance'),
             ('profitability', 'Rentabilité'),
@@ -242,12 +271,14 @@ def company_view(request, symbol):
             ('current_ratio', 'Ratio courant'),
             ('quick_ratio', 'Ratio rapide'),
         ],
-        'piotroski': piotroski,
-        'beneish': beneish,
-        'beneish_json': beneish_json,
-        'altman': altman,
-        'altman_json': altman_json,
-        'is_favorite': is_favorite,
+        'tabs': [
+            ('profile', 'Profil'),
+            ('ratios', 'Ratios'),
+            ('income', 'Compte de résultats'),
+            ('balance', 'Bilan'),
+            ('cashflow', 'Cash Flow'),
+            ('valuation', 'Valorisation'),
+        ],
     }
     return render(request, 'analysis/company.html', context)
 
