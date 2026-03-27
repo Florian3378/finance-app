@@ -200,251 +200,134 @@
 <!-- ══════════════════════════════════════════════════════ -->
 <div class="tab-content" id="tab-ratios" style="display:none;">
     <div class="row mb-4">
-
-        <!-- Croissance -->
+        {% for block_key, block_name, ratios_list in ratio_blocks %}
+        {% with cat=scoring.categories|get_item:block_key %}
         <div class="col-md mb-3">
             <div class="card h-100">
                 <div class="card-body">
+
+                    <!-- En-tête avec jauge SVG -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="card-title mb-0">Croissance</div>
-                        <div class="score-circle" data-score="{{ scoring.categories.growth.score }}">
-                            {{ scoring.categories.growth.score }}
+                        <div class="card-title mb-0">{{ block_name }}</div>
+                        <div style="position:relative;width:52px;height:52px;">
+                            <svg viewBox="0 0 52 52" style="width:52px;height:52px;transform:rotate(-90deg);">
+                                <circle cx="26" cy="26" r="20" fill="none"
+                                        stroke="rgba(0,0,0,0.06)" stroke-width="4"/>
+                                <circle cx="26" cy="26" r="20" fill="none"
+                                        stroke="{% if cat.score >= 65 %}#22C55E{% elif cat.score >= 45 %}#F59E0B{% else %}#EF4444{% endif %}"
+                                        stroke-width="4" stroke-linecap="round"
+                                        class="block-gauge-path"
+                                        data-score="{{ cat.score }}"
+                                        style="stroke-dasharray:125.7;stroke-dashoffset:125.7;"/>
+                            </svg>
+                            <div style="position:absolute;top:50%;left:50%;
+                                        transform:translate(-50%,-50%);
+                                        font-size:12px;font-weight:600;
+                                        color:{% if cat.score >= 65 %}#22C55E{% elif cat.score >= 45 %}#F59E0B{% else %}#EF4444{% endif %};">
+                                {{ cat.score }}
+                            </div>
                         </div>
                     </div>
-                    {% with cat=scoring.categories.growth.rated %}
-                    {% for ratio_key, label in growth_ratios %}
-                    {% with r=cat|get_item:ratio_key %}
+
+                    <!-- Ratios normaux -->
+                    {% if block_key != 'quality' %}
+                    {% with rated=cat.rated %}
+                    {% for ratio_key, label in ratios_list %}
+                    {% with r=rated|get_item:ratio_key def=ratio_definitions|get_item:ratio_key %}
                     <div class="mb-2">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span style="color:var(--text-muted);">{{ label }}</span>
+                        <div class="d-flex justify-content-between align-items-center small mb-1">
+                            <div class="ratio-tooltip-wrapper">
+                                <span style="color:var(--text-muted);
+                                             border-bottom:1px dotted rgba(0,0,0,0.2);">
+                                    {{ label }}
+                                </span>
+                                {% if def %}
+                                <div class="ratio-tooltip">
+                                    <div class="ratio-tooltip-title">{{ def.full_name }}</div>
+                                    <div class="ratio-tooltip-def">{{ def.definition }}</div>
+                                    <div class="ratio-tooltip-label">Formule théorique</div>
+                                    <div class="ratio-tooltip-formula">{{ def.formula_th }}</div>
+                                    <div class="ratio-tooltip-label">Formule analytique</div>
+                                    <div class="ratio-tooltip-formula">{{ def.formula_an }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
                             <span style="font-weight:500;">
-                                {% if r.value %}{{ r.value }}%{% else %}—{% endif %}
+                                {% if r and r.value is not None %}
+                                    {{ r.value }}{% if block_key == 'growth' or block_key == 'profitability' %}%{% endif %}
+                                {% else %}—{% endif %}
                             </span>
                         </div>
                         <div class="ratio-bar">
-                            <div class="ratio-bar-fill" data-score="{{ r.score|default:0 }}" style="width:0%"></div>
+                            <div class="ratio-bar-fill"
+                                 data-score="{{ r.score|default:0 }}"
+                                 style="width:0%"></div>
                         </div>
                     </div>
                     {% endwith %}
                     {% endfor %}
                     {% endwith %}
-                </div>
-            </div>
-        </div>
+                    {% endif %}
 
-        <!-- Rentabilité -->
-        <div class="col-md mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="card-title mb-0">Rentabilité</div>
-                        <div class="score-circle" data-score="{{ scoring.categories.profitability.score }}">
-                            {{ scoring.categories.profitability.score }}
-                        </div>
-                    </div>
-                    {% with cat=scoring.categories.profitability.rated %}
-                    {% for ratio_key, label in profitability_ratios %}
-                    {% with r=cat|get_item:ratio_key %}
+                    <!-- Bloc Qualité -->
+                    {% if block_key == 'quality' %}
+                    {% for q_label, q_value, q_score in quality_items %}
                     <div class="mb-2">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span style="color:var(--text-muted);">{{ label }}</span>
-                            <span style="font-weight:500;">
-                                {% if r.value %}{{ r.value }}%{% else %}—{% endif %}
-                            </span>
+                            <span style="color:var(--text-muted);">{{ q_label }}</span>
+                            <span style="font-weight:500;">{{ q_value }}</span>
                         </div>
                         <div class="ratio-bar">
-                            <div class="ratio-bar-fill" data-score="{{ r.score|default:0 }}" style="width:0%"></div>
+                            <div class="ratio-bar-fill" data-score="{{ q_score }}" style="width:0%"></div>
                         </div>
                     </div>
-                    {% endwith %}
                     {% endfor %}
-                    {% endwith %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Valorisation -->
-        <div class="col-md mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="card-title mb-0">Valorisation</div>
-                        <div class="score-circle" data-score="{{ scoring.categories.valuation.score }}">
-                            {{ scoring.categories.valuation.score }}
-                        </div>
-                    </div>
-                    {% with cat=scoring.categories.valuation.rated %}
-                    {% for ratio_key, label in valuation_ratios %}
-                    {% with r=cat|get_item:ratio_key %}
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span style="color:var(--text-muted);">{{ label }}</span>
-                            <span style="font-weight:500;">
-                                {% if r %}{{ r.value|default:"—" }}{% else %}{{ ratios|get_item:ratio_key|default:"—" }}{% endif %}
-                            </span>
-                        </div>
-                        <div class="ratio-bar">
-                            <div class="ratio-bar-fill" data-score="{{ r.score|default:0 }}" style="width:0%"></div>
-                        </div>
-                    </div>
-                    {% endwith %}
-                    {% endfor %}
-                    {% endwith %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Sécurité -->
-        <div class="col-md mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="card-title mb-0">Sécurité</div>
-                        <div class="score-circle" data-score="{{ scoring.categories.safety.score }}">
-                            {{ scoring.categories.safety.score }}
-                        </div>
-                    </div>
-                    {% with cat=scoring.categories.safety.rated %}
-                    {% for ratio_key, label in safety_ratios %}
-                    {% with r=cat|get_item:ratio_key %}
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span style="color:var(--text-muted);">{{ label }}</span>
-                            <span style="font-weight:500;">
-                                {% if r %}{{ r.value|default:"—" }}{% else %}{{ ratios|get_item:ratio_key|default:"—" }}{% endif %}
-                            </span>
-                        </div>
-                        <div class="ratio-bar">
-                            <div class="ratio-bar-fill" data-score="{{ r.score|default:0 }}" style="width:0%"></div>
-                        </div>
-                    </div>
-                    {% endwith %}
-                    {% endfor %}
-                    {% endwith %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Qualité -->
-        <div class="col-md mb-3">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="card-title mb-0">Qualité</div>
-                        <div class="score-circle" data-score="{{ scoring.categories.quality.score }}">
-                            {{ scoring.categories.quality.score }}
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span style="color:var(--text-muted);">Bénéfices positifs</span>
-                            <span style="font-weight:500;">{{ ratios.profitable_years }}/{{ ratios.total_years }} ans</span>
-                        </div>
-                        <div class="ratio-bar">
-                            <div class="ratio-bar-fill"
-                                 data-score="{% widthratio ratios.profitable_years ratios.total_years 100 %}"
-                                 style="width:0%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span style="color:var(--text-muted);">FCF positif</span>
-                            <span style="font-weight:500;">{{ ratios.positive_fcf_years }}/{{ ratios.total_years }} ans</span>
-                        </div>
-                        <div class="ratio-bar">
-                            <div class="ratio-bar-fill"
-                                 data-score="{% widthratio ratios.positive_fcf_years ratios.total_years 100 %}"
-                                 style="width:0%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span style="color:var(--text-muted);">Rachat d'actions</span>
-                            <span style="font-weight:500;">
-                                {% if ratios.shares_buyback %}✓ Oui{% elif ratios.shares_buyback == False %}✗ Non{% else %}—{% endif %}
-                            </span>
-                        </div>
-                        <div class="ratio-bar">
-                            <div class="ratio-bar-fill"
-                                 data-score="{% if ratios.shares_buyback %}100{% else %}0{% endif %}"
-                                 style="width:0%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span style="color:var(--text-muted);">Marges consistantes</span>
-                            <span style="font-weight:500;">
-                                {% if ratios.margin_consistency %}✓ Oui{% else %}✗ Non{% endif %}
-                            </span>
-                        </div>
-                        <div class="ratio-bar">
-                            <div class="ratio-bar-fill"
-                                 data-score="{% if ratios.margin_consistency %}100{% else %}20{% endif %}"
-                                 style="width:0%"></div>
-                        </div>
-                    </div>
-
                     {% if piotroski %}
-                    <div style="border-top:1px solid var(--border);padding-top:12px;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
                             <span style="font-size:12px;font-weight:600;">Piotroski F-Score</span>
-                            <span class="badge bg-{{ piotroski.color }}"
-                                  id="piotroskiBadge" style="cursor:pointer;font-size:12px;">
-                                {{ piotroski.total }}/9
-                            </span>
+                            <span class="badge bg-{{ piotroski.color }}" id="piotroskiBadge" style="cursor:pointer;font-size:11px;">{{ piotroski.total }}/9</span>
                         </div>
                         <div class="ratio-bar mb-1">
-                            <div class="ratio-bar-fill"
-                                 data-score="{% widthratio piotroski.total 9 100 %}"
-                                 style="width:0%"></div>
+                            <div class="ratio-bar-fill" data-score="{% widthratio piotroski.total 9 100 %}" style="width:0%"></div>
                         </div>
                         <div style="font-size:11px;color:var(--text-muted);">{{ piotroski.label }}</div>
                     </div>
                     {% endif %}
-
                     {% if beneish %}
-                    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
                             <span style="font-size:12px;font-weight:600;">Beneish M-Score</span>
-                            <span class="badge bg-{{ beneish.color }}"
-                                  id="beneishBadge" style="cursor:pointer;font-size:12px;">
-                                {{ beneish.m_score }}
-                            </span>
+                            <span class="badge bg-{{ beneish.color }}" id="beneishBadge" style="cursor:pointer;font-size:11px;">{{ beneish.m_score }}</span>
                         </div>
                         <div class="ratio-bar mb-1">
-                            <div class="ratio-bar-fill"
-                                 data-score="{% if beneish.color == 'success' %}85{% elif beneish.color == 'warning' %}45{% else %}10{% endif %}"
-                                 style="width:0%"></div>
+                            <div class="ratio-bar-fill" data-score="{% if beneish.color == 'success' %}85{% elif beneish.color == 'warning' %}45{% else %}10{% endif %}" style="width:0%"></div>
                         </div>
                         <div style="font-size:11px;color:var(--text-muted);">{{ beneish.label }}</div>
                     </div>
                     {% endif %}
-
                     {% if altman %}
-                    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
                             <span style="font-size:12px;font-weight:600;">Altman Z-Score</span>
-                            <span class="badge bg-{{ altman.color }}"
-                                  id="altmanBadge" style="cursor:pointer;font-size:12px;">
-                                {{ altman.score }}
-                            </span>
+                            <span class="badge bg-{{ altman.color }}" id="altmanBadge" style="cursor:pointer;font-size:11px;">{{ altman.score }}</span>
                         </div>
                         <div class="ratio-bar mb-1">
-                            <div class="ratio-bar-fill"
-                                 data-score="{% if altman.color == 'success' %}85{% elif altman.color == 'warning' %}45{% else %}10{% endif %}"
-                                 style="width:0%"></div>
+                            <div class="ratio-bar-fill" data-score="{% if altman.color == 'success' %}85{% elif altman.color == 'warning' %}45{% else %}10{% endif %}" style="width:0%"></div>
                         </div>
                         <div style="font-size:11px;color:var(--text-muted);">{{ altman.label }}</div>
                     </div>
                     {% endif %}
-
                     <script id="piotroskiJson" type="application/json">{{ piotroski_json|safe }}</script>
                     <script id="beneishJson" type="application/json">{{ beneish_json|safe }}</script>
                     <script id="altmanJson" type="application/json">{{ altman_json|safe }}</script>
+                    {% endif %}
+
                 </div>
             </div>
         </div>
-
+        {% endwith %}
+        {% endfor %}
     </div>
 </div>
 
@@ -467,24 +350,24 @@
                     </thead>
                     <tbody>
                         <tr><td style="color:var(--text-muted);">Revenus</td>
-                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.revenue|floatformat:0 }}</td>{% endif %}
-                            {% for s in income_statements %}<td class="text-end">{{ s.revenue|floatformat:0 }}</td>{% endfor %}
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.revenue|in_millions }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.revenue|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);">Bénéfice brut</td>
-                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.grossProfit|floatformat:0 }}</td>{% endif %}
-                            {% for s in income_statements %}<td class="text-end">{{ s.grossProfit|floatformat:0 }}</td>{% endfor %}
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.grossProfit|in_millions }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.grossProfit|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);">EBITDA</td>
-                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.ebitda|floatformat:0 }}</td>{% endif %}
-                            {% for s in income_statements %}<td class="text-end">{{ s.ebitda|floatformat:0 }}</td>{% endfor %}
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.ebitda|in_millions }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.ebitda|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);">Résultat opérationnel</td>
-                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.operatingIncome|floatformat:0 }}</td>{% endif %}
-                            {% for s in income_statements %}<td class="text-end">{{ s.operatingIncome|floatformat:0 }}</td>{% endfor %}
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.operatingIncome|in_millions }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.operatingIncome|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);">Résultat net</td>
-                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.netIncome|floatformat:0 }}</td>{% endif %}
-                            {% for s in income_statements %}<td class="text-end">{{ s.netIncome|floatformat:0 }}</td>{% endfor %}
+                            {% if income_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ income_ttm.netIncome|in_millions }}</td>{% endif %}
+                            {% for s in income_statements %}<td class="text-end">{{ s.netIncome|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr style="background:rgba(0,0,0,0.02);">
                             <td style="color:var(--text-muted);">Marge brute</td>
@@ -533,34 +416,34 @@
                     <tbody>
                         <tr><td colspan="{% if balance_ttm %}{{ balance_sheets|length|add:2 }}{% else %}{{ balance_sheets|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Actif</td></tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Total Actif</td>
-                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalAssets|floatformat:0 }}</td>{% endif %}
-                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalAssets|floatformat:0 }}</td>{% endfor %}
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalAssets|in_millions }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalAssets|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Actif courant</td>
-                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalCurrentAssets|floatformat:0 }}</td>{% endif %}
-                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalCurrentAssets|floatformat:0 }}</td>{% endfor %}
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalCurrentAssets|in_millions }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalCurrentAssets|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Trésorerie</td>
-                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.cashAndCashEquivalents|floatformat:0 }}</td>{% endif %}
-                            {% for s in balance_sheets %}<td class="text-end">{{ s.cashAndCashEquivalents|floatformat:0 }}</td>{% endfor %}
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.cashAndCashEquivalents|in_millions }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.cashAndCashEquivalents|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td colspan="{% if balance_ttm %}{{ balance_sheets|length|add:2 }}{% else %}{{ balance_sheets|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Passif</td></tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Total Passif</td>
-                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalLiabilities|floatformat:0 }}</td>{% endif %}
-                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalLiabilities|floatformat:0 }}</td>{% endfor %}
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalLiabilities|in_millions }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalLiabilities|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Dette totale</td>
-                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalDebt|floatformat:0 }}</td>{% endif %}
-                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalDebt|floatformat:0 }}</td>{% endfor %}
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalDebt|in_millions }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalDebt|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Dette long terme</td>
-                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.longTermDebt|floatformat:0 }}</td>{% endif %}
-                            {% for s in balance_sheets %}<td class="text-end">{{ s.longTermDebt|floatformat:0 }}</td>{% endfor %}
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.longTermDebt|in_millions }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.longTermDebt|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td colspan="{% if balance_ttm %}{{ balance_sheets|length|add:2 }}{% else %}{{ balance_sheets|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Fonds propres</td></tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Fonds propres</td>
-                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalStockholdersEquity|floatformat:0 }}</td>{% endif %}
-                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalStockholdersEquity|floatformat:0 }}</td>{% endfor %}
+                            {% if balance_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ balance_ttm.totalStockholdersEquity|in_millions }}</td>{% endif %}
+                            {% for s in balance_sheets %}<td class="text-end">{{ s.totalStockholdersEquity|in_millions }}</td>{% endfor %}
                         </tr>
                     </tbody>
                 </table>
@@ -590,25 +473,25 @@
                     <tbody>
                         <tr><td colspan="{% if cashflow_ttm %}{{ cash_flows|length|add:2 }}{% else %}{{ cash_flows|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Exploitation</td></tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Cash opérationnel</td>
-                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.operatingCashFlow|floatformat:0 }}</td>{% endif %}
-                            {% for s in cash_flows %}<td class="text-end">{{ s.operatingCashFlow|floatformat:0 }}</td>{% endfor %}
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.operatingCashFlow|in_millions }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end">{{ s.operatingCashFlow|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Capex</td>
-                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.capitalExpenditure|floatformat:0 }}</td>{% endif %}
-                            {% for s in cash_flows %}<td class="text-end">{{ s.capitalExpenditure|floatformat:0 }}</td>{% endfor %}
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.capitalExpenditure|in_millions }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end">{{ s.capitalExpenditure|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;font-weight:600;">Free Cash Flow</td>
-                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.freeCashFlow|floatformat:0 }}</td>{% endif %}
-                            {% for s in cash_flows %}<td class="text-end fw-bold">{{ s.freeCashFlow|floatformat:0 }}</td>{% endfor %}
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.freeCashFlow|in_millions }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end fw-bold">{{ s.freeCashFlow|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td colspan="{% if cashflow_ttm %}{{ cash_flows|length|add:2 }}{% else %}{{ cash_flows|length|add:1 }}{% endif %}" style="font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);padding-top:12px;">Financement</td></tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Dividendes versés</td>
-                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.dividendsPaid|floatformat:0 }}</td>{% endif %}
-                            {% for s in cash_flows %}<td class="text-end">{{ s.dividendsPaid|floatformat:0 }}</td>{% endfor %}
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.dividendsPaid|in_millions }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end">{{ s.dividendsPaid|in_millions }}</td>{% endfor %}
                         </tr>
                         <tr><td style="color:var(--text-muted);padding-left:20px;">Rachat d'actions</td>
-                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.commonStockRepurchased|floatformat:0 }}</td>{% endif %}
-                            {% for s in cash_flows %}<td class="text-end">{{ s.commonStockRepurchased|floatformat:0 }}</td>{% endfor %}
+                            {% if cashflow_ttm %}<td class="text-end fw-bold" style="color:var(--accent);">{{ cashflow_ttm.commonStockRepurchased|in_millions }}</td>{% endif %}
+                            {% for s in cash_flows %}<td class="text-end">{{ s.commonStockRepurchased|in_millions }}</td>{% endfor %}
                         </tr>
                     </tbody>
                 </table>
@@ -622,138 +505,196 @@
 <!-- ONGLET VALORISATION                                    -->
 <!-- ══════════════════════════════════════════════════════ -->
 <div class="tab-content" id="tab-valuation" style="display:none;">
+
     <!-- DCF Inversé -->
     {% with rdcf=valuations.reverse_dcf %}
     {% if rdcf.applicable %}
-    <div class="alert alert-info mb-4" style="font-size:13px;">
+    <div style="background:rgba(46,107,230,0.06);border-left:3px solid #2E6BE6;
+                border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:20px;font-size:13px;">
         <strong>DCF Inversé :</strong> {{ rdcf.note }}
     </div>
     {% endif %}
     {% endwith %}
 
-    <!-- Paramètres -->
+    <!-- Paramètres (dépliable) -->
     <div class="card mb-4">
-        <div class="card-body">
-            <div class="card-title">Paramètres de valorisation</div>
-            <form method="get" id="valForm">
-                <input type="hidden" name="period" value="{{ period }}">
-                <div class="row g-3">
-                    <div class="col-md">
-                        <label class="form-label">Croissance phase 1 (ans 1-5)
-                            <span style="color:var(--accent);" id="g1Val">{{ params.growth_rate_1 }}%</span>
-                        </label>
-                        <input type="range" class="form-range" name="g1" min="0" max="30" step="0.5"
-                               value="{{ params.growth_rate_1 }}"
-                               oninput="document.getElementById('g1Val').textContent=this.value+'%';document.getElementById('g1N').value=this.value">
-                        <input type="number" id="g1N" class="form-control form-control-sm mt-1"
-                               value="{{ params.growth_rate_1 }}" min="0" max="30" step="0.5"
-                               oninput="document.querySelector('[name=g1]').value=this.value;document.getElementById('g1Val').textContent=this.value+'%'">
-                    </div>
-                    <div class="col-md">
-                        <label class="form-label">Croissance phase 2 (ans 6-10)
-                            <span style="color:var(--accent);" id="g2Val">{{ params.growth_rate_2 }}%</span>
-                        </label>
-                        <input type="range" class="form-range" name="g2" min="0" max="20" step="0.5"
-                               value="{{ params.growth_rate_2 }}"
-                               oninput="document.getElementById('g2Val').textContent=this.value+'%';document.getElementById('g2N').value=this.value">
-                        <input type="number" id="g2N" class="form-control form-control-sm mt-1"
-                               value="{{ params.growth_rate_2 }}" min="0" max="20" step="0.5"
-                               oninput="document.querySelector('[name=g2]').value=this.value;document.getElementById('g2Val').textContent=this.value+'%'">
-                    </div>
-                    <div class="col-md">
-                        <label class="form-label">Croissance perpétuelle
-                            <span style="color:var(--accent);" id="gtVal">{{ params.terminal_growth }}%</span>
-                        </label>
-                        <input type="range" class="form-range" name="gt" min="0" max="5" step="0.5"
-                               value="{{ params.terminal_growth }}"
-                               oninput="document.getElementById('gtVal').textContent=this.value+'%';document.getElementById('gtN').value=this.value">
-                        <input type="number" id="gtN" class="form-control form-control-sm mt-1"
-                               value="{{ params.terminal_growth }}" min="0" max="5" step="0.5"
-                               oninput="document.querySelector('[name=gt]').value=this.value;document.getElementById('gtVal').textContent=this.value+'%'">
-                    </div>
-                    <div class="col-md">
-                        <label class="form-label">WACC
-                            <span style="color:var(--accent);" id="waccVal">{{ params.wacc }}%</span>
-                        </label>
-                        <input type="range" class="form-range" name="wacc" min="5" max="15" step="0.5"
-                               value="{{ params.wacc }}"
-                               oninput="document.getElementById('waccVal').textContent=this.value+'%';document.getElementById('waccN').value=this.value">
-                        <input type="number" id="waccN" class="form-control form-control-sm mt-1"
-                               value="{{ params.wacc }}" min="5" max="15" step="0.5"
-                               oninput="document.querySelector('[name=wacc]').value=this.value;document.getElementById('waccVal').textContent=this.value+'%'">
-                    </div>
-                    <div class="col-md">
-                        <label class="form-label">Taux Trésor (Buffett)
-                            <span style="color:var(--accent);" id="trVal">{{ params.treasury_rate }}%</span>
-                        </label>
-                        <input type="range" class="form-range" name="tr" min="2" max="8" step="0.5"
-                               value="{{ params.treasury_rate }}"
-                               oninput="document.getElementById('trVal').textContent=this.value+'%';document.getElementById('trN').value=this.value">
-                        <input type="number" id="trN" class="form-control form-control-sm mt-1"
-                               value="{{ params.treasury_rate }}" min="2" max="8" step="0.5"
-                               oninput="document.querySelector('[name=tr]').value=this.value;document.getElementById('trVal').textContent=this.value+'%'">
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary mt-3" onclick="switchTab('valuation')">
-                    Recalculer
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="card-title mb-0">Résultats de valorisation</div>
+                <button type="button"
+                        onclick="toggleParams()"
+                        id="paramsToggleBtn"
+                        class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-sliders"></i> Paramètres
                 </button>
-            </form>
-        </div>
-    </div>
+            </div>
 
-    <!-- Résultats -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="card-title">Résultats par méthode</div>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Méthode</th>
-                            <th class="text-end">Valeur intrinsèque</th>
-                            <th class="text-end">MS 25%</th>
-                            <th class="text-end">MS 50%</th>
-                            <th class="text-end">Vs prix actuel</th>
-                            <th>Fiabilité</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for key, v in valuations.items %}
-                        {% if key != 'reverse_dcf' and key != 'consensus' %}
-                        <tr {% if not v.applicable %}style="opacity:0.5"{% endif %}>
-                            <td style="font-weight:500;">{{ v.name }}</td>
-                            <td class="text-end">
-                                {% if v.intrinsic %}<strong>${{ v.intrinsic }}</strong>
-                                {% else %}<span style="color:var(--text-muted);">N/A</span>{% endif %}
-                            </td>
-                            <td class="text-end">{% if v.ms25 %}${{ v.ms25 }}{% else %}—{% endif %}</td>
-                            <td class="text-end">{% if v.ms50 %}${{ v.ms50 }}{% else %}—{% endif %}</td>
-                            <td class="text-end">
-                                {% if v.intrinsic and quote.price %}
-                                    {% if v.intrinsic > quote.price %}
-                                        <span style="color:var(--success);font-weight:500;">Potentiel</span>
-                                    {% else %}
-                                        <span style="color:var(--danger);font-weight:500;">Surévalué</span>
-                                    {% endif %}
-                                {% else %}—{% endif %}
-                            </td>
-                            <td>
-                                {% for i in "1234" %}
-                                    {% if forloop.counter <= v.reliability_score %}
-                                        <span style="color:#F59E0B;">★</span>
-                                    {% else %}
-                                        <span style="color:var(--border);">★</span>
-                                    {% endif %}
-                                {% endfor %}
-                            </td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <!-- Bloc paramètres caché par défaut -->
+            <div id="paramsBlock" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+                <form method="get" id="valForm">
+                    <input type="hidden" name="period" value="{{ period }}">
+                    <div class="row g-3">
+                        <div class="col-md">
+                            <label class="form-label">Croissance phase 1
+                                <span style="color:var(--accent);" id="g1Val">{{ params.growth_rate_1 }}%</span>
+                            </label>
+                            <input type="range" class="form-range" name="g1"
+                                   min="0" max="30" step="0.5" value="{{ params.growth_rate_1 }}"
+                                   oninput="document.getElementById('g1Val').textContent=this.value+'%';document.getElementById('g1N').value=this.value">
+                            <input type="number" id="g1N" class="form-control form-control-sm mt-1"
+                                   value="{{ params.growth_rate_1 }}" min="0" max="30" step="0.5"
+                                   oninput="document.querySelector('[name=g1]').value=this.value;document.getElementById('g1Val').textContent=this.value+'%'">
+                        </div>
+                        <div class="col-md">
+                            <label class="form-label">Croissance phase 2
+                                <span style="color:var(--accent);" id="g2Val">{{ params.growth_rate_2 }}%</span>
+                            </label>
+                            <input type="range" class="form-range" name="g2"
+                                   min="0" max="20" step="0.5" value="{{ params.growth_rate_2 }}"
+                                   oninput="document.getElementById('g2Val').textContent=this.value+'%';document.getElementById('g2N').value=this.value">
+                            <input type="number" id="g2N" class="form-control form-control-sm mt-1"
+                                   value="{{ params.growth_rate_2 }}" min="0" max="20" step="0.5"
+                                   oninput="document.querySelector('[name=g2]').value=this.value;document.getElementById('g2Val').textContent=this.value+'%'">
+                        </div>
+                        <div class="col-md">
+                            <label class="form-label">Croissance perpétuelle
+                                <span style="color:var(--accent);" id="gtVal">{{ params.terminal_growth }}%</span>
+                            </label>
+                            <input type="range" class="form-range" name="gt"
+                                   min="0" max="5" step="0.5" value="{{ params.terminal_growth }}"
+                                   oninput="document.getElementById('gtVal').textContent=this.value+'%';document.getElementById('gtN').value=this.value">
+                            <input type="number" id="gtN" class="form-control form-control-sm mt-1"
+                                   value="{{ params.terminal_growth }}" min="0" max="5" step="0.5"
+                                   oninput="document.querySelector('[name=gt]').value=this.value;document.getElementById('gtVal').textContent=this.value+'%'">
+                        </div>
+                        <div class="col-md">
+                            <label class="form-label">WACC
+                                <span style="color:var(--accent);" id="waccVal">{{ params.wacc }}%</span>
+                            </label>
+                            <input type="range" class="form-range" name="wacc"
+                                   min="5" max="15" step="0.5" value="{{ params.wacc }}"
+                                   oninput="document.getElementById('waccVal').textContent=this.value+'%';document.getElementById('waccN').value=this.value">
+                            <input type="number" id="waccN" class="form-control form-control-sm mt-1"
+                                   value="{{ params.wacc }}" min="5" max="15" step="0.5"
+                                   oninput="document.querySelector('[name=wacc]').value=this.value;document.getElementById('waccVal').textContent=this.value+'%'">
+                        </div>
+                        <div class="col-md">
+                            <label class="form-label">Taux Trésor (Buffett)
+                                <span style="color:var(--accent);" id="trVal">{{ params.treasury_rate }}%</span>
+                            </label>
+                            <input type="range" class="form-range" name="tr"
+                                   min="2" max="8" step="0.5" value="{{ params.treasury_rate }}"
+                                   oninput="document.getElementById('trVal').textContent=this.value+'%';document.getElementById('trN').value=this.value">
+                            <input type="number" id="trN" class="form-control form-control-sm mt-1"
+                                   value="{{ params.treasury_rate }}" min="2" max="8" step="0.5"
+                                   oninput="document.querySelector('[name=tr]').value=this.value;document.getElementById('trVal').textContent=this.value+'%'">
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary btn-sm"
+                                onclick="switchTab('valuation')">
+                            Recalculer
+                        </button>
+                        <a href="?period={{ period }}&tab=valuation"
+                           class="btn btn-outline-secondary btn-sm">
+                            Réinitialiser
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+
+    <!-- Cards de valorisation -->
+    <div class="row g-3 mb-4">
+        {% for key, v in valuations.items %}
+        {% if key != 'reverse_dcf' and key != 'consensus' %}
+        {% with def=valuation_definitions|get_item:key %}
+        <div class="col-md-4">
+            <div class="val-card">
+                <div class="val-card-summary">
+                    <div style="font-size:11px;font-weight:600;color:var(--text-muted);
+                                text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">
+                        {{ v.name }}
+                    </div>
+                    {% if v.applicable and v.intrinsic %}
+                        <div style="font-size:24px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+                            ${{ v.intrinsic }}
+                        </div>
+                        {% if v.intrinsic > quote.price %}
+                            <span class="val-badge-up">
+                                +{% widthratio v.intrinsic quote.price 100 %}% potentiel
+                            </span>
+                        {% else %}
+                            <span class="val-badge-down">Surévalué</span>
+                        {% endif %}
+                    {% else %}
+                        <div style="font-size:20px;font-weight:600;color:var(--text-muted);margin-bottom:6px;">N/A</div>
+                        <span class="val-badge-na">{{ v.note|truncatechars:30 }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- Détails au survol -->
+                <div class="val-card-detail">
+                    {% if def %}
+                    <div class="val-card-def">{{ def.definition }}</div>
+                    <div class="val-card-formula-label">Formule théorique</div>
+                    <div class="val-card-formula">{{ def.formula_th }}</div>
+                    <div class="val-card-formula-label">Formule numérique</div>
+                    <div class="val-card-formula">{{ def.formula_an }}</div>
+                    <div class="val-card-formula-label">Fiabilité</div>
+                    <div style="font-size:11px;color:#6B7280;">{{ def.reliability }}</div>
+                    {% endif %}
+                    {% if v.intrinsic %}
+                    <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
+                        <div class="d-flex justify-content-between" style="font-size:11px;color:var(--text-muted);margin-bottom:3px;">
+                            <span>Avec marge sécurité 25%</span>
+                            <span style="font-weight:600;color:var(--text-primary);">${{ v.ms25 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between" style="font-size:11px;color:var(--text-muted);">
+                            <span>Avec marge sécurité 50%</span>
+                            <span style="font-weight:600;color:var(--text-primary);">${{ v.ms50 }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Fourchette consensuelle -->
+    {% if valuations.consensus %}
+    {% with c=valuations.consensus %}
+    <div class="card">
+        <div class="card-body">
+            <div class="card-title">Fourchette consensuelle</div>
+            <div class="row text-center g-3">
+                <div class="col-3">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Bas</div>
+                    <div style="font-size:20px;font-weight:700;color:var(--danger);">${{ c.low }}</div>
+                </div>
+                <div class="col-3">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Médiane</div>
+                    <div style="font-size:20px;font-weight:700;color:var(--warning);">${{ c.median }}</div>
+                </div>
+                <div class="col-3">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Haut</div>
+                    <div style="font-size:20px;font-weight:700;color:var(--success);">${{ c.high }}</div>
+                </div>
+                <div class="col-3">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Prix actuel</div>
+                    <div style="font-size:20px;font-weight:700;color:var(--accent);">${{ c.current }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% endif %}
+
+</div>
 
     {% if valuations.consensus %}
     {% with c=valuations.consensus %}
@@ -897,6 +838,34 @@ initPopover('altmanBadge', 'altmanJson',
         return c + '</div>';
     }
 );
+
+function animateBlockGauges() {
+    document.querySelectorAll('.block-gauge-path').forEach(path => {
+        const score = parseInt(path.dataset.score);
+        const circumference = 125.7;
+        const offset = circumference - (score / 100) * circumference;
+        path.style.transition = 'stroke-dashoffset 0.8s ease';
+        path.style.strokeDashoffset = offset;
+    });
+}
+
+const _switchTab = switchTab;
+window.switchTab = function(tabId) {
+    _switchTab(tabId);
+    if (tabId === 'ratios') setTimeout(animateBlockGauges, 50);
+};
+
+function toggleParams() {
+    const block = document.getElementById('paramsBlock');
+    const btn = document.getElementById('paramsToggleBtn');
+    if (block.style.display === 'none') {
+        block.style.display = 'block';
+        btn.innerHTML = '<i class="bi bi-x"></i> Fermer';
+    } else {
+        block.style.display = 'none';
+        btn.innerHTML = '<i class="bi bi-sliders"></i> Paramètres';
+    }
+}
 
 // ── GRAPHIQUES ────────────────────────────────────────────
 {% if chart_data %}

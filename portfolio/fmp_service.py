@@ -25,24 +25,24 @@ def _get(url, cache_key, timeout=60 * 60 * 24):
             return data
         else:
             print(f"[API ERROR] {response.status_code} - {response.text[:100]}")
-            # Cache l'erreur 1h pour éviter de rappeler inutilement
             cache.set(cache_key, '__ERROR__', 60 * 60)
             return None
     except Exception as e:
         print(f"[API EXCEPTION] {e}")
         return None
 
+
 def get_quote(symbol):
     url = f"{BASE_URL}/quote?symbol={symbol}&apikey={API_KEY}"
-    data = _get(url, f"quote_{symbol}", timeout=60 * 5)  # Cache 5 min pour les prix
+    data = _get(url, f"quote_{symbol}", timeout=60 * 5)
     if data and len(data) > 0:
         return data[0]
     return None
 
 
 def search_symbol(query):
-    url = f"{BASE_URL}/search-name?query={query}&limit=10&apikey={API_KEY}"
-    data = _get(url, f"search_{query}", timeout=60 * 60)  # Cache 1h
+    url = f"https://financialmodelingprep.com/stable/search-name?query={query}&limit=10&apikey={API_KEY}"
+    data = _get(url, f"search_{query}", timeout=60 * 60)
     return data or []
 
 
@@ -78,10 +78,12 @@ def get_multiple_quotes(symbols):
             quotes[symbol] = quote
     return quotes
 
+
 def get_quarterly_income(symbol, limit=4):
     """4 derniers trimestres du compte de résultats"""
     url = f"{BASE_URL}/income-statement?symbol={symbol}&period=quarter&limit={limit}&apikey={API_KEY}"
     return _get(url, f"income_q_{symbol}_{limit}") or []
+
 
 def get_quarterly_balance(symbol):
     """Dernier bilan trimestriel"""
@@ -89,10 +91,12 @@ def get_quarterly_balance(symbol):
     data = _get(url, f"balance_q_{symbol}")
     return data[0] if data else {}
 
+
 def get_quarterly_cashflow(symbol, limit=4):
     """4 derniers trimestres du cash flow"""
     url = f"{BASE_URL}/cash-flow-statement?symbol={symbol}&period=quarter&limit={limit}&apikey={API_KEY}"
     return _get(url, f"cashflow_q_{symbol}_{limit}") or []
+
 
 def get_market_indices():
     """Récupère les principaux indices boursiers"""
@@ -105,17 +109,20 @@ def get_market_indices():
             results.append(data[0])
     return results
 
+
 def get_biggest_gainers():
     """Top hausses du jour"""
     url = f"{BASE_URL}/biggest-gainers?apikey={API_KEY}"
-    data = _get(url, "biggest_gainers", timeout=60 * 60 * 12)  # Cache 15 min
+    data = _get(url, "biggest_gainers", timeout=60 * 60 * 12)
     return data[:10] if data else []
+
 
 def get_biggest_losers():
     """Top baisses du jour"""
     url = f"{BASE_URL}/biggest-losers?apikey={API_KEY}"
     data = _get(url, "biggest_losers", timeout=60 * 60 * 12)
     return data[:10] if data else []
+
 
 def get_most_active():
     """Actions les plus échangées"""

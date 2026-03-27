@@ -531,3 +531,157 @@ h5 { font-size: 14px; }
     border-color: #D97706;
     color: white;
 }
+
+/* ── TOOLTIPS RATIO ─────────────────────────────────────── */
+.ratio-tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.ratio-tooltip {
+    display: none;
+    position: absolute;
+    left: 105%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 240px;
+    background: #fff;
+    border-left: 3px solid #2E6BE6;
+    border-radius: 0 10px 10px 0;
+    padding: 12px 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.ratio-tooltip-wrapper:hover .ratio-tooltip {
+    display: block;
+}
+
+.ratio-tooltip-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #2E6BE6;
+    margin-bottom: 6px;
+}
+
+.ratio-tooltip-def {
+    font-size: 11px;
+    color: #6B7280;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.ratio-tooltip-label {
+    font-size: 10px;
+    color: #9CA3AF;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ratio-tooltip-formula {
+    background: rgba(46,107,230,0.06);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 11px;
+    color: #1B2A4A;
+    font-family: monospace;
+    margin-bottom: 6px;
+}
+
+/* Jauge SVG dans les blocs */
+.block-gauge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── CARDS VALORISATION ─────────────────────────────────── */
+.val-card {
+    background: #fff;
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: default;
+    transition: all 0.25s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.val-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    border-color: rgba(46,107,230,0.2);
+    transform: translateY(-2px);
+}
+
+.val-card-summary {
+    transition: opacity 0.2s ease;
+}
+
+.val-card-detail {
+    display: none;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+}
+
+.val-card:hover .val-card-detail {
+    display: block;
+}
+
+.val-card-def {
+    color: #6B7280;
+    line-height: 1.5;
+    margin-bottom: 8px;
+}
+
+.val-card-formula-label {
+    font-size: 10px;
+    color: #9CA3AF;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+}
+
+.val-card-formula {
+    background: rgba(46,107,230,0.06);
+    border-left: 2px solid #2E6BE6;
+    border-radius: 0 6px 6px 0;
+    padding: 5px 8px;
+    font-size: 10px;
+    color: #1B2A4A;
+    font-family: monospace;
+    margin-bottom: 6px;
+}
+
+.val-badge-up {
+    background: rgba(34,197,94,0.1);
+    color: #15803D;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.val-badge-down {
+    background: rgba(239,68,68,0.1);
+    color: #B91C1C;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    display: inline-block;
+}
+
+.val-badge-na {
+    background: rgba(0,0,0,0.05);
+    color: #9CA3AF;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    display: inline-block;
+}

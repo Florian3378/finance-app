@@ -14,6 +14,8 @@ from .valuation import calculate_all_valuations, SECTOR_PER
 from portfolio.models import Favorite
 from .altman import calculate_altman
 import json as json_module
+from .ratio_definitions import RATIO_DEFINITIONS
+from .ratio_definitions import RATIO_DEFINITIONS, VALUATION_DEFINITIONS
 
 
 def enrich_income_statements(statements):
@@ -279,6 +281,55 @@ def company_view(request, symbol):
             ('cashflow', 'Cash Flow'),
             ('valuation', 'Valorisation'),
         ],
+        'ratio_definitions': RATIO_DEFINITIONS,
+        'quality_items': [
+            ('Bénéfices positifs',
+            f"{ratios.get('profitable_years', 0)}/{ratios.get('total_years', 0)} ans",
+            int(ratios.get('profitable_years', 0) / max(ratios.get('total_years', 1), 1) * 100)),
+            ('FCF positif',
+            f"{ratios.get('positive_fcf_years', 0)}/{ratios.get('total_years', 0)} ans",
+            int(ratios.get('positive_fcf_years', 0) / max(ratios.get('total_years', 1), 1) * 100)),
+            ('Rachat d\'actions',
+            '✓ Oui' if ratios.get('shares_buyback') else '✗ Non',
+            100 if ratios.get('shares_buyback') else 0),
+            ('Marges consistantes',
+            '✓ Oui' if ratios.get('margin_consistency') else '✗ Non',
+            100 if ratios.get('margin_consistency') else 20),
+        ],
+        'ratio_blocks': [
+            ('growth', 'Croissance', [
+                ('revenue_cagr', 'CA CAGR'),
+                ('net_income_cagr', 'RN CAGR'),
+                ('eps_cagr', 'BPA CAGR'),
+                ('fcf_cagr', 'FCF CAGR'),
+            ]),
+            ('profitability', 'Rentabilité', [
+                ('roe', 'ROE'),
+                ('roic', 'ROIC'),
+                ('roa', 'ROA'),
+                ('net_margin', 'Marge nette'),
+                ('gross_margin', 'Marge brute'),
+                ('fcf_margin', 'Marge FCF'),
+            ]),
+            ('valuation', 'Valorisation', [
+                ('per', 'PER'),
+                ('peg', 'PEG'),
+                ('pb', 'P/B'),
+                ('ps', 'P/S'),
+                ('pcf', 'P/FCF'),
+                ('ev_ebitda', 'EV/EBITDA'),
+                ('ev_revenue', 'EV/Revenue'),
+            ]),
+            ('safety', 'Sécurité', [
+                ('debt_to_equity', 'Dette/FP'),
+                ('net_debt_ebitda', 'Dette nette/EBITDA'),
+                ('interest_coverage', 'Couv. intérêts'),
+                ('current_ratio', 'Ratio courant'),
+                ('quick_ratio', 'Ratio rapide'),
+            ]),
+            ('quality', 'Qualité', []),
+        ],
+        'valuation_definitions': VALUATION_DEFINITIONS,
     }
     return render(request, 'analysis/company.html', context)
 
